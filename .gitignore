@@ -1,0 +1,4 @@
+# ignore obj files 
+*.0 
+# ignore exe 
+/dct
