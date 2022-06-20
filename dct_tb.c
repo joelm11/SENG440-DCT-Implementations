@@ -1,3 +1,5 @@
+// Calculate DCT of arbitrary sequence using matrix of precalculated DCT coeffs. 
+// C = D*x where D is NxN and x is an N length input
 #include <stdio.h>
 #define _USE_MATH_DEFINES 
 #include <math.h> 
@@ -8,30 +10,29 @@ const double test_sequence[] = {1, 2, 3, 4, 5, 6, 7, 8};
 int main()
 { 
     // Calculate constants for coefficient matrix
-    double SF = sqrt((double) 2 / N);  
-    double inv_r2 = 1 / sqrt(2); 
+    double SF = sqrt( 2.0 / N);  
+    double inv_r2 = (1.0 / sqrt(2.0)); 
 
     // Coefficient matrix calculation 
-    double D[8][8]; 
-    for( int i = 0; i < N; i++) { // i is like n and j is like k
-        for( int j = 0; j < N; j++) { 
+    double D[N][N]; 
+    for( int k = 0; k < N; k++) { 
+        for( int n = 0; n < N; n++) { 
             
-            if(i == 0) { 
-                D[i][j] = SF / inv_r2;
+            if(k == 0) { 
+                D[k][n] = inv_r2;
             } else { 
-                D[i][j] = SF * cos((2 * i + 1) * (j * M_PI) / (2 * N));
+                D[k][n] = cos((2 * n + 1) * (k * M_PI) / (2 * N));
             } 
-            printf("%.3f ", D[i][j]); 
         }  
-        printf("\n");
     } 
 
     // DCT calculation 
-    double C[8] = {0};
-    for( int i = 0; i < N; i++) { 
+    double C[N];
+    for( int i = 0; i < N; i++) {  
+        C[i] = 0;
         for( int j = 0; j < N; j++) { 
             
-            C[i] += test_sequence[j] * D[i][j]; 
+            C[i] += SF * test_sequence[j] * D[i][j]; 
         }
     }
 
