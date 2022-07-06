@@ -6,7 +6,15 @@
 
 void reflector(unsigned int *a, unsigned int *b) {
     unsigned int temp_a = *a + *b;
+    // make sure the addition operation is saturated
+    if (temp_a > 255) {
+        temp_a = 255;
+    }
     unsigned int temp_b = *a - *b;
+    // make sure the subtraction operation is saturated
+    if (temp_b  > 255) {
+        temp_b = 0;
+    }
 
     *a = temp_a;
     *b = temp_b;
@@ -16,7 +24,15 @@ void reflector(unsigned int *a, unsigned int *b) {
 void rotator(unsigned int *a, unsigned int *b, double k, unsigned int n) {
     double c = (n * M_PI) / 16;
     double temp_a = (*a * k * cos(c)) + (*b * k * sin(c));
+    // make sure the addition operation is saturated
+    if (temp_a > 255) {
+        temp_a = 255;
+    }
     double temp_b = (*b * k * cos(c)) - (*a * k * sin(c));
+    // make sure the subtraction operation is saturated
+    if (temp_b < 0) {
+        temp_b = 0;
+    }
 
     *a = (unsigned int) temp_a;
     *b = (unsigned int) temp_b;
