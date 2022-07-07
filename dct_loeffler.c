@@ -42,7 +42,7 @@ void rotator(unsigned int *a, unsigned int *b, double k, unsigned int n) {
 
 int main() {
     // the main input array for 1D-dct 
-    unsigned int x[] = {23,99,57,244,145,22,156,127};
+    unsigned int x[] = {1,2,3,4,5,6,7,8};
 
     // stage 1:
     int i;
