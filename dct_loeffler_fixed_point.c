@@ -1,15 +1,21 @@
-// All cos and sqrt operations can be pre-computed for better optimization
+// All cos and sqrt operations are pre-computed with scale-factors of 2^7 for better optimization
 #include <stdio.h>
-#define _USE_MATH_DEFINES
-#include <math.h>
+// pre-computed values for cos with a scale-factor of 2^7
+unsigned int c[] = {106, 126, 49};
+// pre-computed values for sin with a scale-factor of 2^7
+unsigned int s[] = {71, 25, 118};
+// pre-computed sqrt value with a scale-factor of 2^7
+unsigned int q[] = {128, 181};
 
 
 void reflector(unsigned int *a, unsigned int *b) {
+    
     unsigned int temp_a = *a + *b;
     // make sure the addition operation is saturated
     if (temp_a > 255) {
         temp_a = 255;
     }
+
     unsigned int temp_b = *a - *b;
     // make sure the subtraction operation is saturated
     if (temp_b  > 255) {
@@ -21,21 +27,24 @@ void reflector(unsigned int *a, unsigned int *b) {
 }
 
 // The Rotator function can be impemented with butterfly operations in hardware.
-void rotator(unsigned int *a, unsigned int *b, double k, unsigned int n) {
-    double c = (n * M_PI) / 16;
-    double temp_a = (*a * k * cos(c)) + (*b * k * sin(c));
+void rotator(unsigned int *a, unsigned int *b, unsigned int k, unsigned int n) {
+    
+    unsigned int temp_a = ((*a << 7) * q[k] * c[n]) + ((*b << 7) * q[k] * s[n]);
     // make sure the addition operation is saturated
-    if (temp_a > 255) {
-        temp_a = 255;
-    }
-    double temp_b = (*b * k * cos(c)) - (*a * k * sin(c));
-    // make sure the subtraction operation is saturated
-    if (temp_b < 0) {
-        temp_b = 0;
+    // 534773760 is 255 * 2^21 which is the current scale factor at this point
+    if (temp_a > 534773760) {
+        temp_a = 534773760;
     }
 
-    *a = (unsigned int) temp_a;
-    *b = (unsigned int) temp_b;
+    unsigned int temp_b = ((*b << 7) * q[k] * c[n]) - ((*a << 7) * q[k] * s[n]);
+    // make sure the subtraction operation is saturated 
+    // 534773760 is 255 * 2^21 which is the current scale factor at this point
+    if (temp_b > 534773760) {
+        temp_b = 0;
+    }
+    
+    *a = (temp_a >> 21);
+    *b = (temp_b >> 21);
 }
 
 
@@ -59,8 +68,8 @@ int main() {
     // stage 2:
     reflector(&x[0], &x[3]);
     reflector(&x[1], &x[2]);
-    rotator(&x[4], &x[7], 1, 3);
-    rotator(&x[5], &x[6], 1, 1);
+    rotator(&x[4], &x[7], 0, 0);
+    rotator(&x[5], &x[6], 0, 1);
 
     // print result
     printf("Stage 2:\n\n");
@@ -70,7 +79,7 @@ int main() {
 
     // stage 3:
     reflector(&x[0], &x[1]);
-    rotator(&x[2], &x[3], sqrt(2), 6);
+    rotator(&x[2], &x[3], 1, 2);
     reflector(&x[4], &x[6]); 
     reflector(&x[7], &x[5]);
    
@@ -82,12 +91,22 @@ int main() {
 
     // stage 4:
     reflector(&x[7], &x[4]);
-    double temp = sqrt(2) * (double) x[5];
-    x[5] = (unsigned int) temp;
-    temp = sqrt(2) * (double) x[6];
-    x[6] = (unsigned int) temp;
+    unsigned int temp = q[1] * (x[5] << 7);
+    // make sure the multiplication operation is saturated
+    // 4177920 is 255 * 2^14 which is the current scale factor at this point
+    if (temp > 4177920) {
+        temp = 4177920;
+    }
+    x[5] = (temp >> 14);
+    temp = q[1] * (x[6] << 7);
+    // make sure the multiplication operation is saturated
+    // 4177920 is 255 * 2^14 which is the current scale factor at this point
+    if (temp > 4177920) {
+        temp = 4177920;
+    }
+    x[6] = (temp >> 14);
     
-    // print result
+    //print result
     printf("Stage 4:\n\n");
     for (i = 8; i; i--) {
         printf("x[%d]: %u\n", 8-i, x[8-i]);
