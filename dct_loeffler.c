@@ -44,19 +44,22 @@ int main() {
     // the main input array for 1D-dct 
     double x[] = {1,2,3,4,5,6,7,8};
 
-    // stage 1:
+    // stage 1: 
+    // Straightforward and should be correct
     int i;
-    for (i = 4; i; i--) {
+    for (i = 8; i > 4; i--) {
         reflector(&x[8-i], &x[i-1]);
     }
 
-    // stage 2:
+    // stage 2: 
+    // Should be correct
     reflector(&x[0], &x[3]);
     reflector(&x[1], &x[2]);
     rotator(&x[4], &x[7], 1, 3);
     rotator(&x[5], &x[6], 1, 1);
 
     // stage 3:
+    // 
     reflector(&x[0], &x[1]);
     rotator(&x[2], &x[3], sqrt(2), 6);
     reflector(&x[4], &x[6]); 
