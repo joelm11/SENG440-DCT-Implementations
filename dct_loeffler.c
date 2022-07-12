@@ -4,13 +4,13 @@
 #include <math.h>
 
 
-void reflector(unsigned int *a, unsigned int *b) {
-    unsigned int temp_a = *a + *b;
+void reflector(double *a, double *b) {
+    double temp_a = *a + *b;
     // make sure the addition operation is saturated
     if (temp_a > 255) {
         temp_a = 255;
     }
-    unsigned int temp_b = *a - *b;
+    double temp_b = *a - *b;
     // make sure the subtraction operation is saturated
     if (temp_b  > 255) {
         temp_b = 0;
@@ -21,7 +21,7 @@ void reflector(unsigned int *a, unsigned int *b) {
 }
 
 // The Rotator function can be impemented with butterfly operations in hardware.
-void rotator(unsigned int *a, unsigned int *b, double k, unsigned int n) {
+void rotator(double *a, double *b, double k, double n) {
     double c = (n * M_PI) / 16;
     double temp_a = (*a * k * cos(c)) + (*b * k * sin(c));
     // make sure the addition operation is saturated
@@ -34,8 +34,8 @@ void rotator(unsigned int *a, unsigned int *b, double k, unsigned int n) {
         temp_b = 0;
     }
 
-    *a = (unsigned int) temp_a;
-    *b = (unsigned int) temp_b;
+    *a = temp_a;
+    *b = temp_b;
 }
 
 
@@ -56,11 +56,13 @@ int main() {
         printf("x[%d]: %u\n", 8-i, x[8-i]);
     }
 
-    // stage 2:
+    // stage 2: 
+    // needs verification
     reflector(&x[0], &x[3]);
     reflector(&x[1], &x[2]);
     rotator(&x[4], &x[7], 1, 3);
-    rotator(&x[5], &x[6], 1, 1);
+    rotator(&x[5], &x[6], 1, 1); 
+
 
     // print result
     printf("Stage 2:\n\n");
@@ -69,6 +71,7 @@ int main() {
     }
 
     // stage 3:
+    // 
     reflector(&x[0], &x[1]);
     rotator(&x[2], &x[3], sqrt(2), 6);
     reflector(&x[4], &x[6]); 
@@ -83,9 +86,9 @@ int main() {
     // stage 4:
     reflector(&x[7], &x[4]);
     double temp = sqrt(2) * (double) x[5];
-    x[5] = (unsigned int) temp;
+    x[5] = temp;
     temp = sqrt(2) * (double) x[6];
-    x[6] = (unsigned int) temp;
+    x[6] = temp;
     
     // print result
     printf("Stage 4:\n\n");
