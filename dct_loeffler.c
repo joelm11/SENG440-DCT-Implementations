@@ -52,11 +52,12 @@ int main() {
     }
 
     // stage 2: 
-    // Should be correct
+    // needs verification
     reflector(&x[0], &x[3]);
     reflector(&x[1], &x[2]);
     rotator(&x[4], &x[7], 1, 3);
-    rotator(&x[5], &x[6], 1, 1);
+    rotator(&x[5], &x[6], 1, 1); 
+
 
     // stage 3:
     // 
@@ -73,10 +74,19 @@ int main() {
     x[6] = temp;
     
     //print result
-    for (i = 8; i; i--) {
-        printf("x[%d]: %.3f\t", 8-i, x[8-i]);
-    }
-    printf("\n");
+    // for (i = 8; i; i--) {
+    //     printf("x[%d]: %.3f\t", 8-i, x[8-i] * 1 / (2 * sqrt(2)));
+    // } 
+    printf("%.3f\t", x[0] * 1 / (2 * sqrt(2)));
+    printf("%.3f\t", x[7] * 1 / (2 * sqrt(2)));
+    printf("%.3f\t", x[2] * 1 / (2 * sqrt(2)));
+    printf("%.3f\t", x[5] * 1 / (2 * sqrt(2)));
+    printf("%.3f\t", x[1] * 1 / (2 * sqrt(2)));
+    printf("%.3f\t", x[6] * 1 / (2 * sqrt(2)));
+    printf("%.3f\t", x[3] * 1 / (2 * sqrt(2)));
+    printf("%.3f\t", x[4] * 1 / (2 * sqrt(2)));
+    printf("\n"); 
+    
     // keep in mind that after loeffler's algorithm is done, the output array X has shifted:
     // x[0] = X[0], x[1] = X[4], x[2] = X[2], x[3] = X[6], x[4] = X[7], x[5] = X[3], x[6] = X[5], x[7] = X[1] 
 }
