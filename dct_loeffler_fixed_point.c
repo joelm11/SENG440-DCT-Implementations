@@ -1,23 +1,15 @@
-// Implementation of Loeffler using fixed-point arithmetic 
-
+// All cos and sqrt operations are pre-computed with scale-factors of 2^7 for better optimization
 #include <stdio.h>
+// pre-computed values for cos with a scale-factor of 2^7
+unsigned int c[] = {106, 126, 49};
+// pre-computed values for sin with a scale-factor of 2^7
+unsigned int s[] = {71, 25, 118};
+// pre-computed sqrt value with a scale-factor of 2^7
+unsigned int q[] = {128, 181};
 
-// Pre-computed values for Cosine, Sine, and root(2) with a scale-factor of 2^7 
-// Indices of sinusoid arrays correspond to [0] = f(3pi/16), [1] = f(pi/16), [2] = f(6pi/16) 
-// Q[0] = root(2), Q[1] = ?
-unsigned int C[] = {106, 126, 49};
-unsigned int S[] = {71, 25, 118};
-unsigned int Q[] = {128, 181}; 
-
-// Pre-computed constants for the simplified rotator operation with SF = 2^7  
-// Ox[0] = (k = 1, C = 1), Ox[1] = (k = 1, C = 3), Ox[2] = (k = root(2), C = 6) 
-unsigned int O1_consts[] = {};     
-unsigned int O2_consts[] = {};
-unsigned int C[] = {106, 126, 49}; // NOTE: Reorder these probably
 
 void reflector(unsigned int *a, unsigned int *b) {
-
-    // TODO: There is an assembly instruction for saturated arithmetic that should be utilized here
+    
     unsigned int temp_a = *a + *b;
     // make sure the addition operation is saturated
     if (temp_a > 255) {
@@ -57,31 +49,25 @@ void rotator(unsigned int *a, unsigned int *b, unsigned int k, unsigned int n) {
 
 
 
-//  TODO: Implement saturating arithmetic (for all stages)
 int main() {
+    // the main input array for 1D-dct 
+    unsigned int x[] = {32,42,57,77,45,22,56,97};
     
-    // Assume 8-bit input to DCT (pixel value) 
-    unsigned int x[] = {1, 2, 3, 4, 5, 6, 7, 8};
-    unsigned int s1_out[8];
-    unsigned int s2_out[8];
-    unsigned int s3_out[8];
-    unsigned int s4_out[8];
+    // stage 1:
+    int i;
+    for (i = 4; i; i--) {
+        reflector(&x[4-i], &x[3+i]);
+    }
 
-    // Stage 1: 
-    s1_out[0] = x[0] + x[7]; 
-    s1_out[7] = x[0] - x[7]; 
-    s1_out[1] = x[1] + x[6];
-    s1_out[6] = x[1] - x[6]; 
-    s1_out[2] = x[2] + x[5];
-    s1_out[5] = x[2] - x[5]; 
-    s1_out[3] = x[3] + x[4];
-    s1_out[4] = x[3] - x[4];
+    // print result
+    printf("Stage 1:\n\n");
+    for (i = 8; i; i--) {
+        printf("x[%d]: %u\n", 8-i, x[8-i]);
+    }
 
-    // Stage 2:
-    s2_out[0] = s1_out[0] + s1_out[3];
-    s2_out[3] = s1_out[0] - s1_out[3]; 
-    s2_out[1] = s1_out[1] + s1_out[2];
-    s2_out[2] = s1_out[1] - s1_out[2];
+    // stage 2:
+    reflector(&x[0], &x[3]);
+    reflector(&x[1], &x[2]);
     rotator(&x[4], &x[7], 0, 0);
     rotator(&x[5], &x[6], 0, 1);
 
