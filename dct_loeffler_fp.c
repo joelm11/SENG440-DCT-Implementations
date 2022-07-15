@@ -42,7 +42,14 @@ int main() {
     reflector(&x[0], &x[3]);
     reflector(&x[1], &x[2]);
     trotator(&x[4], &x[7], 1, 3);
-    trotator(&x[5], &x[6], 1, 1); 
+    trotator(&x[5], &x[6], 1, 1);  
+
+    // Check output of stage
+    printf("Stage 2 output\n");  
+    for(int i = 0; i < 8; i++) { 
+
+        printf("%.3f\t", x[i]);
+    }   printf("\n");
 
 
     // Stage 3:
@@ -50,13 +57,26 @@ int main() {
     trotator(&x[2], &x[3], sqrt(2), 6);
     reflector(&x[4], &x[6]); 
     reflector(&x[7], &x[5]);
-   
+    
+    // Check output of stage
+    printf("Stage 3 output\n");  
+    for(int i = 0; i < 8; i++) { 
+        printf("%.3f\t", x[i]);
+    }   printf("\n");
+
+
     // Stage 4:
     reflector(&x[7], &x[4]);
     double temp = sqrt(2) * x[5];
     x[5] = temp;
     temp = sqrt(2) * x[6];
-    x[6] = temp;
+    x[6] = temp; 
+
+    // Check output of stage
+    printf("Stage 4 output\n");  
+    for(int i = 0; i < 8; i++) { 
+        printf("%.3f\t", x[i]);
+    }   printf("\n");
 
     // Print final DCT product with attached final scale factor,
     // prints reordered to match input sequence ordering 
