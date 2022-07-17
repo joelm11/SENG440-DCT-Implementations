@@ -1,9 +1,20 @@
-// Implementation of Loeffler using fixed-point arithmetic for 16-bit integers 
-// Scale factors may be doubled for 32-bit integers
+// Vectorized implementation of Loeffler using fixed-point arithmetic for 16-bit integers 
+// Scale factors may be doubled for 32-bit integers 
+/* Vectorized Loeffler Implementation Notes:  
+    - To keep the entirety of intermediate constants within NEON registers, 
+        the DCT will be computed in 2 halves.
+    - Will require clever placement of elements within vectors 
+    - Reflectors we can add and subtract elements simulaneously 
+    - Rotators we can load all necessary constants into registers 
+        - Can add the cosine term to both intermediate outputs
+        - Vector shift for fixed point arithmetic 
+    
+*/
 
 #include <stdio.h>
 #include <stdint.h>
-#include <math.h> 
+#include <math.h>  
+// #include "arm_neon.h"
 
 // Pre-computed constants for the simplified rotator operation with SF = 2^5  
 // Ox[0] = (k = 1, C = 1), Ox[1] = (k = 1, C = 3), Ox[2] = (k = root(2), C = 6) 
