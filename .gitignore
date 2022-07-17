@@ -1,4 +1,13 @@
 # ignore obj files 
 *.0 
-# ignore exe 
-/dct
+
+# Ignore all
+*
+
+# Unignore all with extensions
+!*.*
+
+# Unignore all dirs
+!*/ 
+
+### https://gist.github.com/chichunchen/970a7e97c74a253a4503 to ignore binaries

@@ -13,7 +13,8 @@ short int C[] = {31, 27, 17};
 
 // The Rotator function can be impemented with butterfly operations in hardware.  
 // Here the simplified rotator function has been implemented with reduced multiplications
-void trotator(short int *ain, short int *bin, short int *aout, short int *bout, int k) { 
+void trotator(short int *ain, short int *bin, short int *aout, short int *bout, int k) 
+{ 
     
     short int o1, o2; 
     
@@ -22,7 +23,15 @@ void trotator(short int *ain, short int *bin, short int *aout, short int *bout, 
 
     *aout = o1 >> 5; 
     *bout = o2 >> 5;
-}
+} 
+
+void debug(short int* data) 
+{ 
+    for(int i = 0; i < 8; i++) { 
+
+        printf("%d\t", data[i]); 
+    }   printf("\n");
+};
 
 
 
@@ -56,10 +65,7 @@ int main() {
 
     // Check output of stage
     printf("Stage 2 output\n");  
-    for(int i = 0; i < 8; i++) { 
-
-        printf("%d\t", s2_out[i]);
-    }   printf("\n");
+    debug(s2_out);
 
 
     // Stage 3:
@@ -71,25 +77,20 @@ int main() {
     s3_out[7] = s2_out[7] + s2_out[5];
     s3_out[5] = s2_out[7] - s2_out[5];
    
-    // Check output of stages
+    // Check output of stage
     printf("Stage 3 output\n");  
-    for(int i = 0; i < 8; i++) { 
-        printf("%d\t", s3_out[i]);
-    }   printf("\n");
+    debug(s3_out);
 
     // Stage 4:   
     int temp = s3_out[7];
     s3_out[7] = s3_out[7] + s3_out[4]; 
     s3_out[4] = temp - s3_out[4];  
-    printf("%d\n", s3_out[4]);
     s3_out[5] *= sqrt(2);
     s3_out[6] *= sqrt(2);  
 
     // Check output of stage
     printf("Stage 4 output\n");  
-    for(int i = 0; i < 8; i++) { 
-        printf("%d\t", s3_out[i]);
-    }   printf("\n");
+    debug(s3_out);
 
     // Print final DCT product with attached final scale factor,
     // prints reordered to match input sequence ordering 
