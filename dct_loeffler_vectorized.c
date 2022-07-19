@@ -37,7 +37,7 @@ void trotator(short int *ain, short int *bin, short int *aout, short int *bout, 
     *bout = o2 >> 5;
 } 
 
-void debug(short int* data) 
+void debug(int16_t *data) 
 { 
     for(int i = 0; i < 8; i++) { 
 
@@ -51,42 +51,86 @@ void debug(short int* data)
 int main() {
     
     // Assume 8-bit input to DCT (pixel value) 
-    uint8_t x[] = {1, 2, 3, 4, 5, 6, 7, 8};
+    // uint8_t x[] = {1, 2, 3, 4, 5, 6, 7, 8}; 
+    // Implement a better solution for this TODO: need to try reading into a 16x8 but unsure of how that pointer arithmetic will work atm
+    int16_t x1[] = {1, 2, 3, 4};
+    int16_t x2[] = {5, 6, 7, 8};
 
-    // STAGE 1:  
-    // Load values into NEON registers  
-    // Load first 4 values into one register 
-    // Load next 4 values into another register 
-    // Add them, then subtract them
-    uint8x8_t s1_start; 
-    s1_start = vld1_u8(x); 
-    // Execute reflectors
-    // s1_out[0] = x[0] + x[7]; 
-    // s1_out[7] = x[0] - x[7]; 
-    // s1_out[1] = x[1] + x[6];
-    // s1_out[6] = x[1] - x[6]; 
-    // s1_out[2] = x[2] + x[5];
-    // s1_out[5] = x[2] - x[5]; 
-    // s1_out[3] = x[3] + x[4];
-    // s1_out[4] = x[3] - x[4];
+    /*  STAGE 1: */  
+    
+    // Load values into NEON registers   
+    int16x4_t top_coeffs, bot_coeffs;  
+    int16x4_t s1_out_top, s1_out_bot;
+    
+    // Load first 4 inputs to NEON register
+    top_coeffs = vld1_s16(x1); 
+    
+    // Load last 4 inputs to NEON register
+    bot_coeffs = vld1_s16(x2); 
+    
+    // Reverse to make reflector operation convenient
+    bot_coeffs = vrev64_s16(bot_coeffs); 
 
-    // // Stage 2:
-    // s2_out[0] = s1_out[0] + s1_out[3];
-    // s2_out[3] = s1_out[0] - s1_out[3]; 
-    // s2_out[1] = s1_out[1] + s1_out[2];
-    // s2_out[2] = s1_out[1] - s1_out[2];
+    // Add vectors and store result in larger intermediate vector
+    s1_out_top = vadd_s16(top_coeffs, bot_coeffs);
+    s1_out_bot = vsub_s16(top_coeffs, bot_coeffs);
+ 
+    // DEBUG
+    // Check results are as expected 
+    int16_t result;  
+    result = vget_lane_s16(s1_out_top, 0);
+    printf("%d\t", result); 
+    result = vget_lane_s16(s1_out_top, 1);
+    printf("%d\t", result);
+    result = vget_lane_s16(s1_out_top, 2);
+    printf("%d\t", result);
+    result = vget_lane_s16(s1_out_top, 3);
+    printf("%d\t", result); 
+    result = vget_lane_s16(s1_out_bot, 0);
+    printf("%d\t", result);
+    result = vget_lane_s16(s1_out_bot, 1);
+    printf("%d\t", result);
+    result = vget_lane_s16(s1_out_bot, 2);
+    printf("%d\t", result);
+    result = vget_lane_s16(s1_out_bot, 3);
+    printf("%d\t", result);  
+    printf("\n");
+
+    /*  Stage 2: */ 
+    // Top Coefficients 
+    int16x4_t s2_out_top;  
+    s2_out_top[0] = s1_out_top[0] + s1_out_top[3]; 
+    s2_out_top[3] = s1_out_top[0] - s1_out_top[3];
+    s2_out_top[1] = s1_out_top[1] + s1_out_top[2];
+    s2_out_top[2] = s1_out_top[1] - s1_out_top[2];
+    
+    // DEBUG 
+    result = vget_lane_s16(s2_out_top, 0);
+    printf("%d\t", result); 
+    result = vget_lane_s16(s2_out_top, 1);
+    printf("%d\t", result);
+    result = vget_lane_s16(s2_out_top, 2);
+    printf("%d\t", result);
+    result = vget_lane_s16(s2_out_top, 3); 
+    printf("%d\t", result); 
+    printf("\n");
+
+    // Bottom coefficients
     // trotator(&s1_out[4], &s1_out[7], &s2_out[4], &s2_out[7], 1);
     // trotator(&s1_out[5], &s1_out[6], &s2_out[5], &s2_out[6], 0); 
 
-    // // Check output of stage
-    // printf("Stage 2 output\n");  
-    // debug(s2_out);
+    /*  Stage 3 */ 
+    // Top coefficients 
+    int16x4_t s3_out_top;
+    s3_out_top[0] = s2_out_top[0] + s2_out_top[1]; 
+    s3_out_top[1] = s2_out_top[0] - s2_out_top[1];  
+    // Rotator implementation as a function, will likely greatly benefit from assembly inlining 
+    // Addition of c_temp can be vectorized 
+    // All other operations are scalar 
+    // VMLA VMLA_LANE VMUL_N
+    // trotator(&s2_out[2], &s2_out[3], &s3_out[2], &s3_out[3], 2);  
 
-
-    // // Stage 3:
-    // s3_out[0] = s2_out[0] + s2_out[1]; 
-    // s3_out[1] = s2_out[0] - s2_out[1]; 
-    // trotator(&s2_out[2], &s2_out[3], &s3_out[2], &s3_out[3], 2); 
+    // Bottom coefficients
     // s3_out[4] = s2_out[4] + s2_out[6];
     // s3_out[6] = s2_out[4] - s2_out[6];
     // s3_out[7] = s2_out[7] + s2_out[5];
