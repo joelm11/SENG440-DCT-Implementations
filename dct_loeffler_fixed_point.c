@@ -54,7 +54,11 @@ int main() {
     s1_out[2] = x[2] + x[5];
     s1_out[5] = x[2] - x[5]; 
     s1_out[3] = x[3] + x[4];
-    s1_out[4] = x[3] - x[4];
+    s1_out[4] = x[3] - x[4];  
+
+    // Check output of stage
+    printf("Stage 1 output\n");  
+    debug(s1_out);
 
     // Stage 2:
     s2_out[0] = s1_out[0] + s1_out[3];
