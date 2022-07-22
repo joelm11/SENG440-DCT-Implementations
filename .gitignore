@@ -10,4 +10,7 @@
 # Unignore all dirs
 !*/ 
 
-### https://gist.github.com/chichunchen/970a7e97c74a253a4503 to ignore binaries
+### https://gist.github.com/chichunchen/970a7e97c74a253a4503 to ignore binaries 
+
+# Unignore makefile 
+!makefile
