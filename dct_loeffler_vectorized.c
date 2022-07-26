@@ -83,76 +83,78 @@ int main()
     bot2 = vsub_s16(top1, bot1); 
  
     // DEBUG
-    // printf("Stage 1:\n"); 
-    // debug(top2); 
-    // debug(bot2);
-    // printf("\n");
+    printf("Stage 1:\n"); 
+    debug(top2); 
+    debug(bot2);
+    printf("\n");
 
     /*  STAGE 2: */ 
     // Top Coefficients 
-    // int16x4_t s2_out_top, s2_out_bot;  
+    int16x4_t s2_out_top, s2_out_bot;  
     top1 = vsetlane_s16((vget_lane_s16(top2, 0) + vget_lane_s16(top2, 3)), top1, 0); 
-    // top1[3] = top2[0] - top2[3];
-    // top1[1] = top2[1] + top2[2];
+    // top1[3] = top2[0] - top2[3]; 
+    top1 = vsetlane_s16((vget_lane_s16(top2, 0) - vget_lane_s16(top2, 3)), top1, 3);
+    // top1[1] = top2[1] + top2[2]; 
+    top1 = vsetlane_s16((vget_lane_s16(top2, 1) + vget_lane_s16(top2, 2)), top1, 1);
     // top1[2] = top2[1] - top2[2];
+    top1 = vsetlane_s16((vget_lane_s16(top2, 1) - vget_lane_s16(top2, 2)), top1, 2);
+    // Bottom coefficients (Keep in mind bot array input in reversed order)
+    trotator(&bot2[3], &bot2[0], &bot1[0], &bot1[3], 1);
+    trotator(&bot2[2], &bot2[1], &bot1[1], &bot1[2], 0);   
 
-    // // Bottom coefficients (Keep in mind bot array input in reversed order)
-    // trotator(&bot2[3], &bot2[0], &bot1[0], &bot1[3], 1);
-    // trotator(&bot2[2], &bot2[1], &bot1[1], &bot1[2], 0);   
+    // DEBUG  
+    printf("Stage 2:\n");
+    debug(top1); 
+    debug(bot1);
+    printf("\n");
 
-    // // DEBUG  
-    // printf("Stage 2:\n");
-    // debug(top1); 
-    // debug(bot1);
-    // printf("\n");
+    /*  STAGE 3 */ 
+    // Top coefficients 
+    int16x4_t s3_out_top, s3_out_bot;
+    s3_out_top[0] = s2_out_top[0] + s2_out_top[1]; 
+    s3_out_top[1] = s2_out_top[0] - s2_out_top[1];  
+    // Rotator implementation as a function, will likely greatly benefit from assembly inlining 
+    // Addition of c_temp can be vectorized 
+    // All other operations are scalar 
+    // VMLA VMLA_LANE VMUL_N
+    trotator(&s2_out_top[2], &s2_out_top[3], &s3_out_top[2], &s3_out_top[3], 2);   
 
-    // /*  STAGE 3 */ 
-    // // Top coefficients 
-    // int16x4_t s3_out_top, s3_out_bot;
-    // s3_out_top[0] = s2_out_top[0] + s2_out_top[1]; 
-    // s3_out_top[1] = s2_out_top[0] - s2_out_top[1];  
-    // // Rotator implementation as a function, will likely greatly benefit from assembly inlining 
-    // // Addition of c_temp can be vectorized 
-    // // All other operations are scalar 
-    // // VMLA VMLA_LANE VMUL_N
-    // trotator(&s2_out_top[2], &s2_out_top[3], &s3_out_top[2], &s3_out_top[3], 2);   
-
-    // // Bottom coefficients
-    // s3_out_bot[0] = s2_out_bot[0] + s2_out_bot[2];
-    // s3_out_bot[2] = s2_out_bot[0] - s2_out_bot[2];
-    // s3_out_bot[3] = s2_out_bot[3] + s2_out_bot[1];
-    // s3_out_bot[1] = s2_out_bot[3] - s2_out_bot[1];
+    // Bottom coefficients
+    s3_out_bot[0] = s2_out_bot[0] + s2_out_bot[2];
+    s3_out_bot[2] = s2_out_bot[0] - s2_out_bot[2];
+    s3_out_bot[3] = s2_out_bot[3] + s2_out_bot[1];
+    s3_out_bot[1] = s2_out_bot[3] - s2_out_bot[1];
    
-    // // DEBUG
-    // printf("Stage 3:\n"); 
-    // debug(s3_out_top); 
-    // debug(s3_out_bot);
-    // printf("\n");
+    // DEBUG
+    printf("Stage 3:\n"); 
+    debug(s3_out_top); 
+    debug(s3_out_bot);
+    printf("\n");
 
-    // /* STAGE 4: */  
-    // int16_t temp = s3_out_bot[3];
-    // s3_out_bot[3] = s3_out_bot[3] + s3_out_bot[0]; 
-    // s3_out_bot[0] = temp - s3_out_bot[0];  
-    // s3_out_bot[1] *= sqrt(2);
-    // s3_out_bot[2] *= sqrt(2);  
+    /* STAGE 4: */  
+    int16_t temp = s3_out_bot[3];
+    s3_out_bot[3] = s3_out_bot[3] + s3_out_bot[0]; 
+    s3_out_bot[0] = temp - s3_out_bot[0];  
+    s3_out_bot[1] *= sqrt(2);
+    s3_out_bot[2] *= sqrt(2);  
 
-    // // Check output of stage
-    // printf("Stage 4:\n"); 
-    // debug(s3_out_top); 
-    // debug(s3_out_bot);
-    // printf("\n");
+    // Check output of stage
+    printf("Stage 4:\n"); 
+    debug(s3_out_top); 
+    debug(s3_out_bot);
+    printf("\n");
 
-    // // Print final DCT product with attached final scale factor,
-    // // prints reordered to match input sequence ordering 
-    // printf("%.3f\t", s3_out_top[0] * 1 / (2 * sqrt(2)));
-    // printf("%.3f\t", s3_out_bot[3] * 1 / (2 * sqrt(2)));
-    // printf("%.3f\t", s3_out_top[2] * 1 / (2 * sqrt(2)));
-    // printf("%.3f\t", s3_out_bot[1] * 1 / (2 * sqrt(2)));
-    // printf("%.3f\t", s3_out_top[1] * 1 / (2 * sqrt(2)));
-    // printf("%.3f\t", s3_out_bot[2] * 1 / (2 * sqrt(2)));
-    // printf("%.3f\t", s3_out_top[3] * 1 / (2 * sqrt(2)));
-    // printf("%.3f\t", s3_out_bot[0] * 1 / (2 * sqrt(2)));
-    // printf("\n"); 
+    // Print final DCT product with attached final scale factor,
+    // prints reordered to match input sequence ordering 
+    printf("%.3f\t", s3_out_top[0] * 1 / (2 * sqrt(2)));
+    printf("%.3f\t", s3_out_bot[3] * 1 / (2 * sqrt(2)));
+    printf("%.3f\t", s3_out_top[2] * 1 / (2 * sqrt(2)));
+    printf("%.3f\t", s3_out_bot[1] * 1 / (2 * sqrt(2)));
+    printf("%.3f\t", s3_out_top[1] * 1 / (2 * sqrt(2)));
+    printf("%.3f\t", s3_out_bot[2] * 1 / (2 * sqrt(2)));
+    printf("%.3f\t", s3_out_top[3] * 1 / (2 * sqrt(2)));
+    printf("%.3f\t", s3_out_bot[0] * 1 / (2 * sqrt(2)));
+    printf("\n"); 
 
     // keep in mind that after loeffler's algorithm is done, the output array X has shifted:
     // x[0] = X[0], x[1] = X[4], x[2] = X[2], x[3] = X[6], x[4] = X[7], x[5] = X[3], x[6] = X[5], x[7] = X[1] 
