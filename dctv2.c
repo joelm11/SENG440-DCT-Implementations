@@ -87,13 +87,15 @@ int main()
                             };
 
     /*  Load 8x8 Block:    
-    *
     *   Implementation credit: https://chromium.googlesource.com/chromium/deps/libjpeg_turbo/+/408fab0d8ec3d5aaf274607d688064326d91f725/simd/arm/common/jfdctint-neon.c
     */  
     
+    // Note: NEON guide recommends using lots of variables so the compiler can better optimize 
+    // and pipeline subsequent assembly
+
     int16x8x4_t rows1to3, rows4to7; 
     
-    // vld4q() as it the largest load possible
+    // vld4q() as it is the largest load possible
     rows1to3 = vld4q_s16(x1); 
     rows4to7 = vld4q_s16(x1 + 16); 
     
@@ -104,16 +106,81 @@ int main()
     int16x8x2_t cols3_7 = vuzpq_s16(rows1to3.val[3], rows4to7.val[3]); 
     
     // Load each column into individual registers  
-    // Note: NEON guide recommends using lots of variables so the compiler can better optimize 
-    // and pipeline subsequent assembly
     int16x8_t col0 = cols0_4.val[0]; 
-    int16x8_t col7 = cols0_4.val[1]; 
+    int16x8_t col4 = cols0_4.val[1]; 
     int16x8_t col1 = cols1_5.val[0]; 
     int16x8_t col5 = cols1_5.val[1];
     int16x8_t col2 = cols2_6.val[0];
     int16x8_t col6 = cols2_6.val[1];
     int16x8_t col3 = cols3_7.val[0];
-    int16x8_t col4 = cols3_7.val[1]; 
+    int16x8_t col7 = cols3_7.val[1];   
+
+    printf("Initial inputs:\n");
+    debug(col0);
+    debug(col1);
+    debug(col2);
+    debug(col3); 
+    debug(col4);
+    debug(col5);
+    debug(col6);
+    debug(col7); 
+
+    /* BEGIN CALCULATE EVEN DCT */ 
     
+    // Stage 1  
+
+    int16x8_t col0s1 = vaddq_s16(col0, col7); 
+    int16x8_t col7s1 = vaddq_s16(col1, col6);
+    int16x8_t col1s1 = vaddq_s16(col2, col5);
+    int16x8_t col5s1 = vaddq_s16(col3, col4);
+    int16x8_t col2s1 = vaddq_s16(col0, col7);
+    int16x8_t col6s1 = vaddq_s16(col1, col6);
+    int16x8_t col3s1 = vaddq_s16(col2, col5);
+    int16x8_t col4s1 = vaddq_s16(col3, col4); 
+
+    printf("S1:\n");
+    debug(col0s1);
+    debug(col1s1);
+    debug(col2s1);
+    debug(col3s1); 
+
+    // Stage 2 
+
+    int16x8_t col0s2 = vaddq_s16(col0s1, col3s1); 
+    int16x8_t col1s2 = vaddq_s16(col1s1, col2s1); 
+    int16x8_t col2s2 = vsubq_s16(col1s1, col2s1); 
+    int16x8_t col3s2 = vsubq_s16(col0s1, col3s1); 
+
+    printf("S2:\n");
+    debug(col0s2);
+    debug(col1s2);
+    debug(col2s2);
+    debug(col3s2);
+
+    // Stage 3  
+
+    int16x8_t col0s3 = vaddq_s16(col0s2, col1s2); 
+    int16x8_t col1s3 = vsubq_s16(col0s2, col1s2);
+    // Rotator 6
+    int16x8_t cos6_const = vdupq_n_s16(17);   // Load with scalars  
+    int16x8_t r6o1consts = vdupq_n_s16(24);
+    int16x8_t r6o2consts = vdupq_n_s16(-59);  
     
+    int16x8_t r6temp = vaddq_s16(col2s2, col3s2); 
+    int16x8_t c_temp = vmulq_s16(cos6_const, r6temp); 
+    int16x8_t r6o1temp1 = vmulq_s16(r6o1consts, col3s2);
+    int16x8_t r6o2temp1 = vmulq_s16(r6o2consts, col2s2); 
+
+    int16x8_t r6o1temp2 = vaddq_s16(r6o1temp1, c_temp); 
+    int16x8_t r6o2temp2 = vaddq_s16(r6o2temp1, c_temp); 
+    int16x8_t col2s3 = vshrq_n_s16(r6o1temp2, 5);     // Scale back down 
+    int16x8_t col3s3 = vshrq_n_s16(r6o2temp2, 5);
+
+
+    printf("S3:\n");
+    debug(col0s3);
+    debug(col1s3);
+    debug(col2s3);
+    debug(col3s3);
+
 }
