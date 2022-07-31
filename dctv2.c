@@ -130,19 +130,23 @@ int main()
     // Stage 1  
 
     int16x8_t col0s1 = vaddq_s16(col0, col7); 
-    int16x8_t col7s1 = vaddq_s16(col1, col6);
-    int16x8_t col1s1 = vaddq_s16(col2, col5);
-    int16x8_t col5s1 = vaddq_s16(col3, col4);
-    int16x8_t col2s1 = vaddq_s16(col0, col7);
-    int16x8_t col6s1 = vaddq_s16(col1, col6);
-    int16x8_t col3s1 = vaddq_s16(col2, col5);
-    int16x8_t col4s1 = vaddq_s16(col3, col4); 
+    int16x8_t col7s1 = vsubq_s16(col0, col7);
+    int16x8_t col1s1 = vaddq_s16(col1, col6);
+    int16x8_t col6s1 = vsubq_s16(col1, col6);
+    int16x8_t col2s1 = vaddq_s16(col2, col5);
+    int16x8_t col5s1 = vsubq_s16(col2, col5);
+    int16x8_t col3s1 = vaddq_s16(col3, col4);
+    int16x8_t col4s1 = vsubq_s16(col3, col4); 
 
     printf("S1:\n");
     debug(col0s1);
     debug(col1s1);
     debug(col2s1);
-    debug(col3s1); 
+    debug(col3s1);  
+    debug(col4s1);
+    debug(col5s1);
+    debug(col6s1);
+    debug(col7s1); 
 
     // Stage 2 
 
@@ -161,26 +165,99 @@ int main()
 
     int16x8_t col0s3 = vaddq_s16(col0s2, col1s2); 
     int16x8_t col1s3 = vsubq_s16(col0s2, col1s2);
-    // Rotator 6
+    // Begin Rotator 6 
+    // TODO: Inline the rotators
     int16x8_t cos6_const = vdupq_n_s16(17);   // Load with scalars  
     int16x8_t r6o1consts = vdupq_n_s16(24);
     int16x8_t r6o2consts = vdupq_n_s16(-59);  
     
     int16x8_t r6temp = vaddq_s16(col2s2, col3s2); 
-    int16x8_t c_temp = vmulq_s16(cos6_const, r6temp); 
+    int16x8_t c_temp6 = vmulq_s16(cos6_const, r6temp); 
     int16x8_t r6o1temp1 = vmulq_s16(r6o1consts, col3s2);
     int16x8_t r6o2temp1 = vmulq_s16(r6o2consts, col2s2); 
 
-    int16x8_t r6o1temp2 = vaddq_s16(r6o1temp1, c_temp); 
-    int16x8_t r6o2temp2 = vaddq_s16(r6o2temp1, c_temp); 
+    int16x8_t r6o1temp2 = vaddq_s16(r6o1temp1, c_temp6); 
+    int16x8_t r6o2temp2 = vaddq_s16(r6o2temp1, c_temp6); 
     int16x8_t col2s3 = vshrq_n_s16(r6o1temp2, 5);     // Scale back down 
-    int16x8_t col3s3 = vshrq_n_s16(r6o2temp2, 5);
-
+    int16x8_t col3s3 = vshrq_n_s16(r6o2temp2, 5); 
+    // End Rotator 6
 
     printf("S3:\n");
     debug(col0s3);
     debug(col1s3);
     debug(col2s3);
     debug(col3s3);
+
+    /* END CALCULATE EVEN DCT*/ 
+
+    /* BEGIN CALCULATE ODD DCT */ 
+
+    // Stage 2 
+
+    // Begin Rotator 3  
+    int16x8_t cos3_const = vdupq_n_s16(27);   // Load with scalars  
+    int16x8_t r3o1consts = vdupq_n_s16(-9);
+    int16x8_t r3o2consts = vdupq_n_s16(-44);  
+    
+    int16x8_t r3temp = vaddq_s16(col4s1, col7s1); 
+    int16x8_t c_temp3 = vmulq_s16(cos3_const, r3temp); 
+    int16x8_t r3o1temp1 = vmulq_s16(r3o1consts, col7s1);
+    int16x8_t r3o2temp1 = vmulq_s16(r3o2consts, col4s1); 
+
+    int16x8_t r3o1temp2 = vaddq_s16(r3o1temp1, c_temp3); 
+    int16x8_t r3o2temp2 = vaddq_s16(r3o2temp1, c_temp3); 
+    int16x8_t col4s2 = vshrq_n_s16(r3o1temp2, 5);     // Scale back down 
+    int16x8_t col7s2 = vshrq_n_s16(r3o2temp2, 5); 
+    // End Rotator 3  
+
+    // Begin Rotator 1  
+    int16x8_t cos1_const = vdupq_n_s16(31);   // Load with scalars  
+    int16x8_t r1o1consts = vdupq_n_s16(-25);
+    int16x8_t r1o2consts = vdupq_n_s16(-38);  
+    
+    int16x8_t r1temp = vaddq_s16(col5s1, col6s1); 
+    int16x8_t c_temp1 = vmulq_s16(cos1_const, r1temp); 
+    int16x8_t r1o1temp1 = vmulq_s16(r1o1consts, col6s1);
+    int16x8_t r1o2temp1 = vmulq_s16(r1o2consts, col5s1); 
+
+    int16x8_t r1o1temp2 = vaddq_s16(r1o1temp1, c_temp1); 
+    int16x8_t r1o2temp2 = vaddq_s16(r1o2temp1, c_temp1); 
+    int16x8_t col5s2 = vshrq_n_s16(r1o1temp2, 5);     // Scale back down 
+    int16x8_t col6s2 = vshrq_n_s16(r1o2temp2, 5); 
+    // End Rotator 1 
+
+    printf("S2:\n");
+    debug(col4s2);
+    debug(col5s2);
+    debug(col6s2);
+    debug(col7s2);
+
+    // Stage 3 
+
+    int16x8_t col4s3 = vaddq_s16(col4s2, col6s2);
+    int16x8_t col6s3 = vsubq_s16(col4s2, col6s2);
+    int16x8_t col7s3 = vaddq_s16(col7s2, col5s2);
+    int16x8_t col5s3 = vsubq_s16(col7s2, col5s2);
+
+    printf("S3:\n");
+    debug(col4s3);
+    debug(col5s3);
+    debug(col6s3);
+    debug(col7s3);
+
+    // Stage 4 
+
+    int16x8_t col7s4 = vaddq_s16(col7s3, col4s3);
+    int16x8_t col4s4 = vsubq_s16(col7s3, col4s3);  
+    // int16x8_t root2 = vdupq_n_s16(420); 
+    // Note: This stage is missing the scaling of 2 terms by root(2) 
+
+    printf("S4:\n");
+    debug(col4s4);
+    debug(col5s3);
+    debug(col6s3);
+    debug(col7s4);
+
+    /* END CALCULATE ODD DCT */
 
 }

@@ -1,8 +1,8 @@
-	# gcc -mfloat-abi=softfp -mfpu=neon dctv2.c -S
+# gcc -mfloat-abi=softfp -mfpu=neon dctv2.c -S
 # Compiler selection 
 CC = gcc 
 # Compiler flags 
-CFLAGS = -c -mfloat-abi=hard -mfpu=neon
+CFLAGS = -c -mfloat-abi=hard -mfpu=neon -Wall -O3
 # invoked with 'make all', makes executable and all dependencies 
 all: dctv2 
 
