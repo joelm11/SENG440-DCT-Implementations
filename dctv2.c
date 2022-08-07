@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include "arm_neon.h" 
 
+// DEBUG 
+#include <time.h>
 /**  
     Constants for use in rotators.  
     All constants have an attached scale factor of 2^5.
@@ -67,9 +69,10 @@ void debug2(int32x4_t data)
 int main() 
 { 
 
-    // Constant values for rotator operations  
- 
-
+    // DEBUG
+    float startTime, endTime; 
+    int start =  (int)clock();
+    startTime = (float)clock()/CLOCKS_PER_SEC;
     const int16_t root2 = 45;
 
     // Assume 8-bit input to DCT (pixel value) 
@@ -291,6 +294,12 @@ int main()
     row6s4 = vshrq_n_s16(row6s4, 5);
     /* END CALCULATE ODD DCT*/ 
 
+    // DEBUG 
+    endTime = (float)clock()/CLOCKS_PER_SEC;  
+    int end =  (int)clock();
+    printf("%f\n", endTime - startTime); 
+    printf("%d\n", end - start);
+    printf("Frequency %ld\n", CLOCKS_PER_SEC);
     // As final formatting divide all values by 8 (1/2root(2) done twice)
     printf("Completed Vertical DCT:\n"); 
     debug(vshrq_n_s16(row0s3, 3)); 
