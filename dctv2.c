@@ -113,7 +113,8 @@ int main()
     int16x8_t col7 = cols3_7.val[1];   
 
     /* BEGIN CALCULATE EVEN DCT */ 
-    // Stage 1  
+    // Stage 1   
+    __asm("@ Begin Stage 1");
     int16x8_t col0s1 = vaddq_s16(col0, col7); 
     int16x8_t col7s1 = vsubq_s16(col0, col7);
     int16x8_t col1s1 = vaddq_s16(col1, col6);
@@ -122,6 +123,7 @@ int main()
     int16x8_t col5s1 = vsubq_s16(col2, col5);
     int16x8_t col3s1 = vaddq_s16(col3, col4);
     int16x8_t col4s1 = vsubq_s16(col3, col4); 
+    __asm("@ End Stage 1"); 
     // Stage 2 
     int16x8_t col0s2 = vaddq_s16(col0s1, col3s1); 
     int16x8_t col1s2 = vaddq_s16(col1s1, col2s1); 
@@ -131,6 +133,7 @@ int main()
     int16x8_t col0s3 = vaddq_s16(col0s2, col1s2); 
     int16x8_t col1s3 = vsubq_s16(col0s2, col1s2);
     // Begin Rotator 6      
+    __asm("@ Begin R6"); 
     int16x8_t cos6_const = vdupq_n_s16(COS6_CONST);   // Load with scalars  
     int16x8_t r6o1consts = vdupq_n_s16(R6O1CONST);
     int16x8_t r6o2consts = vdupq_n_s16(R6O2CONST); 
@@ -141,7 +144,8 @@ int main()
     int16x8_t r6o1temp2 = vaddq_s16(r6o1temp1, c_temp6); 
     int16x8_t r6o2temp2 = vaddq_s16(r6o2temp1, c_temp6); 
     int16x8_t col2s3 = vrshrq_n_s16(r6o1temp2, 5);     // Scale back down 
-    int16x8_t col3s3 = vrshrq_n_s16(r6o2temp2, 5); 
+    int16x8_t col3s3 = vrshrq_n_s16(r6o2temp2, 5);  
+    __asm("@ End R6");
     // End Rotator 6
     /* END CALCULATE EVEN DCT*/ 
 
@@ -185,16 +189,17 @@ int main()
     col5s4 = vshrq_n_s16(col5s4, 5);
     int16x8_t col6s4 = vmulq_n_s16(col6s3, root2); 
     col6s4 = vshrq_n_s16(col6s4, 5);
-    /* END CALCULATE ODD DCT */ 
-    printf("Completed Horizontal DCT:\n");
-    debug(col0s3);
-    debug(col1s3);
-    debug(col2s3);
-    debug(col3s3);
-    debug(col4s4);
-    debug(col5s4);
-    debug(col6s4);
-    debug(col7s4);
+    /* END CALCULATE ODD DCT */  \
+    // DEBUG
+    // printf("Completed Horizontal DCT:\n");
+    // debug(col0s3);
+    // debug(col1s3);
+    // debug(col2s3);
+    // debug(col3s3);
+    // debug(col4s4);
+    // debug(col5s4);
+    // debug(col6s4);
+    // debug(col7s4);
     /* VERTICAL DCT */ 
     // Reshape data for DCT 
     int16x8x2_t cols_01 = vtrnq_s16(col0s3, col7s4);                            // Interleave adjacent rows (products)

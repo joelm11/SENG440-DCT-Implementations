@@ -114,277 +114,239 @@ debug2:
 	.fpu neon-vfpv4
 	.type	main, %function
 main:
-	@ args = 0, pretend = 0, frame = 240
+	@ args = 0, pretend = 0, frame = 208
 	@ frame_needed = 0, uses_anonymous_args = 0
+	movw	r1, #:lower16:.LANCHOR0
 	str	lr, [sp, #-4]!
+	mov	r2, #128
 	vpush.64	{d8, d9, d10, d11, d12, d13, d14, d15}
-	sub	sp, sp, #244
+	sub	sp, sp, #212
+	movt	r1, #:upper16:.LANCHOR0
+	add	r0, sp, #80
+	bl	memcpy
+	add	r3, sp, #112
+	add	r2, sp, #80
+	vld4.16	{d0, d2, d4, d6}, [r3:64]
+	vld4.16	{d16, d18, d20, d22}, [r2:64]
+	add	r2, sp, #144
+	vld4.16	{d1, d3, d5, d7}, [r2:64]
+	vld4.16	{d17, d19, d21, d23}, [r3:64]
+	vmov	q13, q0  @ v8hi
+	vmov	q12, q1  @ v8hi
+	vmov	q4, q2  @ v8hi
+	vmov	q5, q3  @ v8hi
+	vmov	q7, q8  @ v8hi
+	vmov	q6, q9  @ v8hi
+	vmov	q15, q10  @ v8hi
+	vmov	q14, q11  @ v8hi
+	vuzp.16	q7, q13
+	vuzp.16	q6, q12
+	vuzp.16	q15, q4
+	vuzp.16	q14, q5
 	.syntax divided
-@ 71 "dctv2.c" 1
-	@test
+@ 117 "dctv2.c" 1
+	@ Begin Stage 1
 @ 0 "" 2
 	.arm
 	.syntax unified
-	movw	r1, #:lower16:.LANCHOR0
-	add	r0, sp, #112
-	movt	r1, #:upper16:.LANCHOR0
-	mov	r2, #128
-	bl	memcpy
-	add	r3, sp, #144
-	add	r2, sp, #112
-	vldr	d6, .L8
+	vadd.i16	q11, q15, q12
+	vadd.i16	q1, q4, q6
+	vsub.i16	q12, q15, q12
+	vadd.i16	q10, q5, q7
+	vadd.i16	q15, q14, q13
+	vsub.i16	q9, q7, q5
+	vsub.i16	q6, q6, q4
+	vsub.i16	q14, q14, q13
+	.syntax divided
+@ 126 "dctv2.c" 1
+	@ End Stage 1
+@ 0 "" 2
+	.arm
+	.syntax unified
+	vadd.i16	q13, q15, q10
+	vadd.i16	q8, q11, q1
+	vsub.i16	q10, q10, q15
+	vsub.i16	q1, q1, q11
+	vadd.i16	q0, q8, q13
+	vsub.i16	q13, q13, q8
+	.syntax divided
+@ 136 "dctv2.c" 1
+	@ Begin R6
+@ 0 "" 2
+	.arm
+	.syntax unified
+	vmov.i16	q8, #65477  @ v8hi
+	vadd.i16	q10, q10, q1
+	vmov.i16	q5, #17  @ v8hi
+	vmul.i16	q1, q8, q1
+	vmla.i16	q1, q10, q5
+	vrshr.s16	q1, q1, #5
+	.syntax divided
+@ 148 "dctv2.c" 1
+	@ End R6
+@ 0 "" 2
+	.arm
+	.syntax unified
+	vmov.i16	q4, #27  @ v8hi
+	vadd.i16	q11, q14, q9
+	vldr	d5, .L8
+	vmov.i16	q10, #65527  @ v8hi
+	vadd.i16	q8, q12, q6
+	add	r3, sp, #64
+	vmov.i16	q7, #31  @ v8hi
+	vmov.i16	q3, #65498  @ v8hi
 	movw	r0, #:lower16:.LC3
-	vld4.16	{d24, d26, d28, d30}, [r3:64]
 	movt	r0, #:upper16:.LC3
-	vld4.16	{d16, d18, d20, d22}, [r2:64]
-	add	r2, sp, #176
-	vld4.16	{d25, d27, d29, d31}, [r2:64]
-	vld4.16	{d17, d19, d21, d23}, [r3:64]
-	add	r3, sp, #96
-	vmov	q7, q12  @ v8hi
-	vmov	q1, q15  @ v8hi
-	vmov	q4, q13  @ v8hi
-	vmov	q0, q14  @ v8hi
-	vmov	q5, q8  @ v8hi
-	vmov	q2, q11  @ v8hi
-	vmov	q6, q9  @ v8hi
-	vmov	q8, q10  @ v8hi
-	vmov.i16	q14, #31  @ v8hi
-	vuzp.16	q5, q7
-	vuzp.16	q2, q1
-	vuzp.16	q6, q4
-	vuzp.16	q8, q0
-	vsub.i16	q11, q5, q1
-	vsub.i16	q9, q2, q7
-	vadd.i16	q2, q2, q7
-	vadd.i16	q5, q1, q5
-	vmov.i16	q1, #65527  @ v8hi
-	vsub.i16	q7, q6, q0
-	vsub.i16	q12, q8, q4
-	vadd.i16	q13, q9, q11
-	vadd.i16	q4, q8, q4
-	vmov.i16	q8, #27  @ v8hi
-	vadd.i16	q0, q0, q6
-	vsub.i16	q15, q5, q2
-	vmov.i16	q6, #65511  @ v8hi
-	vadd.i16	q10, q12, q7
-	vadd.i16	q5, q2, q5
-	vmul.i16	q13, q13, q8
-	vmul.i16	q10, q10, q14
-	vsub.i16	q14, q0, q4
-	vadd.i16	q0, q4, q0
-	vmov.i16	q4, #65492  @ v8hi
-	vadd.i16	q8, q15, q14
-	vmov	q2, q13  @ v8hi
-	vmla.i16	q13, q9, q4
-	vmov	q9, q10  @ v8hi
-	vmla.i16	q2, q11, q1
-	vmla.i16	q9, q7, q6
-	vadd.i16	q7, q0, q5
-	vsub.i16	q5, q5, q0
-	vshr.s16	q2, q2, #5
-	vmov	q11, q9  @ v8hi
-	vmov.i16	q9, #65498  @ v8hi
-	vmla.i16	q10, q12, q9
-	vmov.i16	q12, #17  @ v8hi
-	vshr.s16	q9, q13, #5
-	vshr.s16	q13, q11, #5
-	vmov.i16	q11, #65477  @ v8hi
-	vmul.i16	q8, q8, q12
-	vmov.i16	q12, #24  @ v8hi
-	vsub.i16	q6, q9, q13
-	vadd.i16	q13, q13, q9
-	vshr.s16	q10, q10, #5
-	vst1.64	{d24-d25}, [r3:64]
-	add	r3, sp, #80
-	vmul.i16	q6, q6, d6[0]
-	vmov	q9, q8  @ v8hi
-	vmla.i16	q8, q14, q11
-	vsub.i16	q4, q2, q10
-	vadd.i16	q10, q10, q2
+	vmul.i16	q11, q11, q4
+	vmul.i16	q8, q8, q7
+	vmov	q15, q11  @ v8hi
+	vmla.i16	q15, q10, q9
+	vmov	q9, q15  @ v8hi
+	vmov.i16	q15, #65492  @ v8hi
+	vmla.i16	q11, q15, q14
+	vmov	q14, q8  @ v8hi
+	vshr.s16	q9, q9, #5
+	vmla.i16	q14, q3, q12
+	vmov.i16	q12, #65511  @ v8hi
+	vshr.s16	q11, q11, #5
+	vmla.i16	q8, q12, q6
+	vshr.s16	q14, q14, #5
+	vshr.s16	q8, q8, #5
+	vsub.i16	q6, q9, q14
+	vadd.i16	q14, q14, q9
+	vmul.i16	q6, q6, d5[0]
+	vsub.i16	q9, q11, q8
+	vadd.i16	q8, q8, q11
+	vmul.i16	q9, q9, d5[0]
+	vadd.i16	q12, q8, q14
+	vsub.i16	q3, q8, q14
+	vshr.s16	q6, q6, #5
+	vmov	q11, q12  @ v8hi
+	vmov	q12, q1  @ v8hi
+	vtrn.16	q13, q6
+	vtrn.16	q12, q3
+	vtrn.16	q0, q11
+	vmov	q8, q12  @ v8hi
+	vshr.s16	q12, q9, #5
+	vmov	q14, q0  @ v8hi
+	vmov	q0, q11  @ v4si
+	vst1.64	{d6-d7}, [sp:64]
+	vld1.64	{d6-d7}, [sp:64]
+	vmov	q9, q12  @ v8hi
+	vtrn.32	q14, q13
+	vtrn.32	q0, q6
+	vtrn.16	q1, q9
+	vmov	q2, q14  @ v4si
+	vmov	q11, q0  @ v4si
+	vmov	q12, q1  @ v4si
+	vtrn.32	q12, q8
+	vmov	q14, q8  @ v4si
+	vmov	q8, q9  @ v4si
+	vzip.32	q2, q12
+	vtrn.32	q8, q3
+	vzip.32	q13, q14
+	vmov	q0, q3  @ v4si
+	vmov	q1, q2  @ v4si
+	vldr	d7, .L8
+	vzip.32	q11, q8
+	vzip.32	q6, q0
+	vmov	q9, q8  @ v4si
+	vsub.i16	q2, q11, q14
+	vadd.i16	q11, q14, q11
+	vmov	q8, q6  @ v4si
+	vsub.i16	q6, q1, q0
+	vadd.i16	q0, q0, q1
+	vsub.i16	q14, q13, q9
+	vsub.i16	q1, q8, q12
+	vadd.i16	q12, q12, q8
+	vadd.i16	q8, q9, q13
+	vadd.i16	q9, q6, q1
+	vsub.i16	q13, q0, q12
+	vadd.i16	q0, q0, q12
+	vsub.i16	q12, q11, q8
+	vadd.i16	q11, q11, q8
+	vmul.i16	q9, q9, q4
+	vadd.i16	q4, q2, q14
+	vadd.i16	q8, q12, q13
 	vst1.64	{d22-d23}, [r3:64]
 	add	r3, sp, #48
-	vmla.i16	q9, q15, q12
-	vadd.i16	q11, q13, q10
-	vsub.i16	q10, q13, q10
-	vshr.s16	q6, q6, #5
-	vrshr.s16	q8, q8, #5
-	vmul.i16	q4, q4, d6[0]
-	vst1.64	{d20-d21}, [sp:64]
-	vrshr.s16	q9, q9, #5
-	vstr	d22, [sp, #32]
-	vstr	d23, [sp, #40]
-	vshr.s16	q4, q4, #5
-	vst1.64	{d18-d19}, [r3:64]
-	add	r3, sp, #16
-	vst1.64	{d16-d17}, [r3:64]
-	bl	puts
-	vmov	q0, q7  @ v8hi
-	bl	debug
-	vmov	q0, q5  @ v8hi
-	bl	debug
-	add	r3, sp, #48
-	vld1.64	{d18-d19}, [r3:64]
-	vmov	q0, q9  @ v8hi
-	bl	debug
-	add	r3, sp, #16
-	vld1.64	{d16-d17}, [r3:64]
-	add	r3, sp, #48
-	vmov	q0, q8  @ v8hi
-	vst1.64	{d16-d17}, [r3:64]
-	bl	debug
-	vld1.64	{d0-d1}, [sp:64]
-	bl	debug
-	vmov	q0, q6  @ v8hi
-	vstr	d12, [sp, #16]
-	vstr	d13, [sp, #24]
-	bl	debug
-	vmov	q0, q4  @ v8hi
-	bl	debug
-	vldr	d12, [sp, #32]
-	vldr	d13, [sp, #40]
-	vmov	q0, q6  @ v8hi
-	bl	debug
-	add	r3, sp, #48
-	vmov	q0, q4  @ v8hi
-	vmov	q14, q6  @ v8hi
-	vld1.64	{d18-d19}, [sp:64]
-	vmov.i16	q12, #17  @ v8hi
-	movw	r0, #:lower16:.LC4
-	vld1.64	{d16-d17}, [r3:64]
-	add	r3, sp, #64
-	vtrn.16	q7, q14
-	movt	r0, #:upper16:.LC4
-	vldr	d12, [sp, #16]
-	vldr	d13, [sp, #24]
-	vtrn.16	q5, q0
-	vldr	d6, .L8
-	vmov	q15, q7  @ v8hi
-	vmov	q2, q5  @ v8hi
-	vmov	q13, q8  @ v8hi
-	vtrn.16	q8, q9
-	vtrn.32	q15, q2
-	vtrn.16	q13, q6
-	vmov	q7, q15  @ v4si
-	vmov	q5, q2  @ v4si
-	vmov	q2, q14  @ v4si
-	vtrn.32	q13, q8
-	vmov	q1, q6  @ v4si
-	vmov	q11, q5  @ v4si
-	vtrn.32	q2, q0
-	vmov	q15, q13  @ v4si
-	vmov	q13, q7  @ v4si
-	vtrn.32	q1, q9
-	vzip.32	q11, q8
-	vmov	q14, q2  @ v4si
-	vzip.32	q13, q15
-	vzip.32	q14, q1
-	vmov	q4, q15  @ v4si
-	vmov	q15, q0  @ v4si
-	vmov	q6, q1  @ v4si
-	vzip.32	q15, q9
-	vsub.i16	q7, q11, q6
-	vadd.i16	q5, q6, q11
-	vmov.i16	q11, #27  @ v8hi
-	vmov.i16	q6, #65511  @ v8hi
-	vsub.i16	q2, q15, q4
-	vsub.i16	q1, q13, q9
-	vadd.i16	q10, q9, q13
-	vadd.i16	q0, q4, q15
-	vsub.i16	q15, q14, q8
-	vadd.i16	q8, q8, q14
-	vmov.i16	q14, #31  @ v8hi
-	vadd.i16	q9, q1, q2
-	vadd.i16	q4, q15, q7
-	vadd.i16	q13, q8, q5
-	vmul.i16	q9, q9, q11
-	vmov.i16	q11, #65527  @ v8hi
-	vmul.i16	q4, q4, q14
-	vsub.i16	q14, q8, q5
-	vst1.64	{d26-d27}, [r3:64]
-	add	r3, sp, #48
-	vmov	q8, q9  @ v8hi
-	vmla.i16	q8, q1, q11
-	vsub.i16	q1, q10, q0
-	vadd.i16	q0, q10, q0
-	vmov.i16	q10, #65492  @ v8hi
-	vadd.i16	q5, q14, q1
+	vmul.i16	q7, q4, q7
 	vst1.64	{d0-d1}, [r3:64]
-	add	r3, sp, #96
-	vsub.i16	q11, q0, q13
-	vmla.i16	q9, q2, q10
-	vmov	q2, q4  @ v8hi
-	vmov.i16	q10, #65498  @ v8hi
-	vmul.i16	q5, q5, q12
-	vshr.s16	q8, q8, #5
-	vld1.64	{d24-d25}, [r3:64]
-	add	r3, sp, #80
-	vmla.i16	q2, q15, q6
-	vst1.64	{d22-d23}, [sp:64]
-	vld1.64	{d22-d23}, [r3:64]
 	add	r3, sp, #32
-	vmla.i16	q4, q7, q10
-	vshr.s16	q15, q9, #5
-	vmov	q9, q5  @ v8hi
-	vshr.s16	q2, q2, #5
-	vmla.i16	q9, q1, q12
-	vshr.s16	q4, q4, #5
-	vmla.i16	q5, q14, q11
-	vsub.i16	q7, q15, q2
-	vadd.i16	q15, q15, q2
-	vsub.i16	q6, q8, q4
-	vadd.i16	q4, q8, q4
-	vmul.i16	q7, q7, d6[0]
-	vshr.s16	q12, q9, #5
-	vadd.i16	q10, q4, q15
-	vsub.i16	q4, q15, q4
-	vmul.i16	q6, q6, d6[0]
-	vshr.s16	q5, q5, #5
+	vmul.i16	q5, q8, q5
+	vmov	q8, q9  @ v8hi
+	vmla.i16	q9, q1, q15
+	vmla.i16	q8, q6, q10
+	vsub.i16	q10, q0, q11
+	vmov	q15, q7  @ v8hi
 	vst1.64	{d20-d21}, [r3:64]
+	vmov.i16	q10, #65511  @ v8hi
 	add	r3, sp, #16
+	vshr.s16	q4, q9, #5
+	vmov.i16	q9, #65477  @ v8hi
+	vshr.s16	q8, q8, #5
+	vmla.i16	q15, q2, q10
+	vmov.i16	q10, #65498  @ v8hi
+	vmov	q2, q5  @ v8hi
+	vmla.i16	q5, q12, q9
+	vmla.i16	q7, q14, q10
+	vmov.i16	q10, #24  @ v8hi
+	vshr.s16	q15, q15, #5
+	vmla.i16	q2, q13, q10
+	vshr.s16	q5, q5, #5
+	vshr.s16	q12, q7, #5
+	vsub.i16	q7, q4, q15
+	vadd.i16	q4, q4, q15
+	vsub.i16	q6, q8, q12
+	vadd.i16	q12, q8, q12
+	vshr.s16	q2, q2, #5
+	vmul.i16	q7, q7, d7[0]
+	vmul.i16	q6, q6, d7[0]
+	vadd.i16	q9, q12, q4
+	vsub.i16	q4, q4, q12
+	vst1.64	{d4-d5}, [r3:64]
+	vst1.64	{d18-d19}, [sp:64]
 	vshr.s16	q7, q7, #5
-	vst1.64	{d24-d25}, [r3:64]
-	vshr.s16	q6, q6, #5
 	bl	puts
 	add	r3, sp, #48
+	vshr.s16	q6, q6, #5
 	vld1.64	{d0-d1}, [r3:64]
 	add	r3, sp, #64
-	vld1.64	{d26-d27}, [r3:64]
-	vadd.i16	q0, q0, q13
+	vld1.64	{d22-d23}, [r3:64]
+	vadd.i16	q0, q0, q11
 	vshr.s16	q0, q0, #3
 	bl	debug
-	vld1.64	{d0-d1}, [sp:64]
+	add	r3, sp, #32
+	vld1.64	{d20-d21}, [r3:64]
+	vmov	q0, q10  @ v8hi
 	bl	debug
 	add	r3, sp, #16
-	vld1.64	{d24-d25}, [r3:64]
-	vmov	q0, q12  @ v8hi
+	vld1.64	{d4-d5}, [r3:64]
+	vmov	q0, q2  @ v8hi
 	bl	debug
 	vmov	q0, q5  @ v8hi
 	bl	debug
 	vmov	q0, q4  @ v8hi
 	bl	debug
-	b	.L9
-.L10:
+	vmov	q0, q7  @ v8hi
+	bl	debug
+	vmov	q0, q6  @ v8hi
+	bl	debug
+	vld1.64	{d18-d19}, [sp:64]
+	vmov	q0, q9  @ v8hi
+	bl	debug
+	mov	r0, #0
+	add	sp, sp, #212
+	@ sp needed
+	vldm	sp!, {d8-d15}
+	ldr	pc, [sp], #4
+.L9:
 	.align	3
 .L8:
 	.short	45
 	.short	0
 	.short	0
 	.short	0
-.L9:
-	vmov	q0, q7  @ v8hi
-	bl	debug
-	vmov	q0, q6  @ v8hi
-	bl	debug
-	add	r3, sp, #32
-	vld1.64	{d20-d21}, [r3:64]
-	vmov	q0, q10  @ v8hi
-	bl	debug
-	mov	r0, #0
-	add	sp, sp, #244
-	@ sp needed
-	vldm	sp!, {d8-d15}
-	ldr	pc, [sp], #4
 	.size	main, .-main
 	.section	.rodata
 	.align	2
@@ -461,9 +423,6 @@ main:
 .LC2:
 	.ascii	"%d\012\000"
 .LC3:
-	.ascii	"Completed Horizontal DCT:\000"
-	.space	2
-.LC4:
 	.ascii	"Completed Vertical DCT:\000"
 	.ident	"GCC: (GNU) 8.2.1 20180801 (Red Hat 8.2.1-2)"
 	.section	.note.GNU-stack,"",%progbits
