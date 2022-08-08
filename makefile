@@ -9,6 +9,8 @@ all: dctv2
 
 as: dctv2.s
 
+test: dctv2t.s
+
 dctv: dctv2.o 
 	$(CC) dct_loeffler_vectorized.o -o dctv2 
 
@@ -16,7 +18,10 @@ dctv2.o: dctv2.c
 	$(CC) $(CFLAGS) dctv2.c
 
 dctv2.s: dctv2.c 
-	$(CC) $(CFLAGS2) dctv2.c
+	$(CC) $(CFLAGS2) dctv2.c 
+
+dctv2t.s: dctv2t.c 
+	$(CC) $(CFLAGS2) dctv2t.c
 
 clean: 
 	rm -rf *.o dctv
