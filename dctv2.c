@@ -2,14 +2,15 @@
 // Implementation credit for vector transposition: https://chromium.googlesource.com/chromium/deps/libjpeg_turbo/+/408fab0d8ec3d5aaf274607d688064326d91f725/simd/arm/common/jfdctint-neon.c
 // Note: NEON guide recommends using lots of variables so the compiler can better optimize 
 // and pipeline subsequent assembly
-#include <stdio.h>
+#include <stdio.h> 
+#include <stdlib.h>
 #include <math.h>   
 #include <stdint.h>
 #include "arm_neon.h" 
 // TIMING
 #include <time.h> 
 
-/* Constants for use in rotators with attached SF of 2^5 */
+/* Constants for use in horizontal rotators with attached SF of 2^5 */
 #define COS6_CONST 17 
 #define COS3_CONST 27 
 #define COS1_CONST 31 
@@ -18,8 +19,18 @@
 #define R3O1CONST -9 
 #define R3O2CONST -44 
 #define R1O1CONST -25 
-#define R1O2CONST -38 
+#define R1O2CONST -38   
 #define ROOT2 45
+/* Constants for use in vertical rotators with attached SF of 2^4 */
+#define COS6_CONSTV 9 
+#define COS3_CONSTV 13 
+#define COS1_CONSTV 17 
+#define R6O1CONSTV 12 
+#define R6O2CONSTV -29 
+#define R3O1CONSTV -4 
+#define R3O2CONSTV -22 
+#define R1O1CONSTV -12 
+#define R1O2CONSTV -19 
 
 void debug(int16x8_t data) 
 { 
@@ -43,7 +54,7 @@ void debug(int16x8_t data)
     printf("\n");
 };
 
-int main() 
+void dct(int16_t *input) 
 { 
 
     // TIMING
@@ -51,15 +62,15 @@ int main()
     start =  (int)clock();
 
     // Assume 8-bit input to DCT (pixel value) 
-    int16_t input[] = {1, 2, 3, 4, 5, 6, 7, 8, 
-                    1, 2, 3, 4, 5, 6, 7, 8,
-                    1, 2, 3, 4, 5, 6, 7, 8, 
-                    1, 2, 3, 4, 5, 6, 7, 8, 
-                    1, 2, 3, 4, 5, 6, 7, 8, 
-                    1, 2, 3, 4, 5, 6, 7, 8, 
-                    1, 2, 3, 4, 5, 6, 7, 8, 
-                    1, 2, 3, 4, 5, 6, 7, 8,
-                    };
+    // int16_t input[] = {1, 2, 3, 4, 5, 6, 7, 8,
+    //                     8, 7, 6, 5, 4, 3, 2, 1,
+    //                     1, 2, 3, 4, 5, 6, 7, 8,
+    //                     1, 7, 6, 5, 4, 3, 2, 1,
+    //                     1, 7, 6, 5, 4, 3, 2, 1,
+    //                     1, 7, 6, 5, 4, 3, 2, 1,
+    //                     1, 2, 3, 4, 5, 6, 7, 8,
+    //                     8, 7, 6, 5, 4, 3, 2, 1,
+    //                 };
 
     /* LOAD 8x8 BLOCK OF DATA */
     int16x8x4_t rows1to3, rows4to7; 
@@ -107,12 +118,11 @@ int main()
     int16x8_t cos6_const = vdupq_n_s16(COS6_CONST);           
     int16x8_t r6o1consts = vdupq_n_s16(R6O1CONST);
     int16x8_t r6o2consts = vdupq_n_s16(R6O2CONST);   
-    // Attempt to leverage pipeline doing constant mults first
+    // Order intermediate term computations for pipelining
+    int16x8_t r6_inputs_sum = vaddq_s16(col2s2, col3s2);  
     int16x8_t r6o1temp1 = vmulq_s16(r6o1consts, col3s2);    
     int16x8_t r6o2temp1 = vmulq_s16(r6o2consts, col2s2);  
-    // Sum inputs and calculate common intermediate product 
-    int16x8_t r6_inputs_sum = vaddq_s16(col2s2, col3s2);     
-    int16x8_t c_temp6 = vmulq_s16(cos6_const, r6_inputs_sum); 
+    int16x8_t c_temp6 = vmulq_s16(cos6_const, r6_inputs_sum);     
     // Add intermediate products and perform downscaling with rounding
     int16x8_t r6o1temp2 = vaddq_s16(r6o1temp1, c_temp6); 
     int16x8_t r6o2temp2 = vaddq_s16(r6o2temp1, c_temp6);  
@@ -129,12 +139,11 @@ int main()
     int16x8_t cos3_const = vdupq_n_s16(COS3_CONST);   
     int16x8_t r3o1consts = vdupq_n_s16(R3O1CONST);
     int16x8_t r3o2consts = vdupq_n_s16(R3O2CONST); 
-    // Attempt to leverage pipeline doing constant mults first 
+    // Order intermediate term computations for pipelining 
+    int16x8_t r3_inputs_sum = vaddq_s16(col4s1, col7s1); 
     int16x8_t r3o1temp1 = vmulq_s16(r3o1consts, col7s1);
     int16x8_t r3o2temp1 = vmulq_s16(r3o2consts, col4s1);  
-    // Sum inputs and calculate common intermediate product 
-    int16x8_t r3_inputs_sum = vaddq_s16(col4s1, col7s1); 
-    int16x8_t c_temp3 = vmulq_s16(cos3_const, r3_inputs_sum); 
+    int16x8_t c_temp3 = vmulq_s16(cos3_const, r3_inputs_sum);
     // Add intermediate products and perform downscaling with rounding
     int16x8_t r3o1temp2 = vaddq_s16(r3o1temp1, c_temp3); 
     int16x8_t r3o2temp2 = vaddq_s16(r3o2temp1, c_temp3); 
@@ -146,11 +155,10 @@ int main()
     int16x8_t cos1_const = vdupq_n_s16(COS1_CONST);   // Load with scalars  
     int16x8_t r1o1consts = vdupq_n_s16(R1O1CONST);
     int16x8_t r1o2consts = vdupq_n_s16(R1O2CONST);  
-    // Attempt to leverage pipeline doing constant mults first  
+    // Order intermediate term computations for pipelining 
+    int16x8_t r1_inputs_sum = vaddq_s16(col5s1, col6s1);  
     int16x8_t r1o1temp1 = vmulq_s16(r1o1consts, col6s1);
     int16x8_t r1o2temp1 = vmulq_s16(r1o2consts, col5s1); 
-    // Sum inputs and calculate common intermediate product 
-    int16x8_t r1_inputs_sum = vaddq_s16(col5s1, col6s1); 
     int16x8_t c_temp1 = vmulq_s16(cos1_const, r1_inputs_sum); 
     // Add intermediate products and perform downscaling with rounding
     int16x8_t r1o1temp2 = vaddq_s16(r1o1temp1, c_temp1); 
@@ -184,15 +192,15 @@ int main()
     int16x8x2_t cols_45 = vtrnq_s16(col1s3, col6s4);
     int16x8x2_t cols_67 = vtrnq_s16(col3s3, col4s4);  
     // Interleave alternating interleaved adjacent rows
-    int32x4x2_t cols_0145_l = vtrnq_s32(vreinterpretq_s32_s16(cols_01.val[0]), vreinterpretq_s32_s16(cols_45.val[0]));
-    int32x4x2_t cols_0145_h = vtrnq_s32(vreinterpretq_s32_s16(cols_01.val[1]), vreinterpretq_s32_s16(cols_45.val[1]));
-    int32x4x2_t cols_2367_l = vtrnq_s32(vreinterpretq_s32_s16(cols_23.val[0]), vreinterpretq_s32_s16(cols_67.val[0]));
-    int32x4x2_t cols_2367_h = vtrnq_s32(vreinterpretq_s32_s16(cols_23.val[1]), vreinterpretq_s32_s16(cols_67.val[1]));  
+    int32x4x2_t cols_0145_0_3 = vtrnq_s32(vreinterpretq_s32_s16(cols_01.val[0]), vreinterpretq_s32_s16(cols_45.val[0]));
+    int32x4x2_t cols_0145_4_7 = vtrnq_s32(vreinterpretq_s32_s16(cols_01.val[1]), vreinterpretq_s32_s16(cols_45.val[1]));
+    int32x4x2_t cols_2367_0_3 = vtrnq_s32(vreinterpretq_s32_s16(cols_23.val[0]), vreinterpretq_s32_s16(cols_67.val[0]));
+    int32x4x2_t cols_2367_4_7 = vtrnq_s32(vreinterpretq_s32_s16(cols_23.val[1]), vreinterpretq_s32_s16(cols_67.val[1]));  
     // By another vector interleaving resultant vector becomes ordered result of horizontal DCT
-    int32x4x2_t rows_04 = vzipq_s32(cols_0145_l.val[0], cols_2367_l.val[0]);    
-    int32x4x2_t rows_15 = vzipq_s32(cols_0145_h.val[0], cols_2367_h.val[0]);   
-    int32x4x2_t rows_26 = vzipq_s32(cols_0145_l.val[1], cols_2367_l.val[1]);
-    int32x4x2_t rows_37 = vzipq_s32(cols_0145_h.val[1], cols_2367_h.val[1]); 
+    int32x4x2_t rows_04 = vzipq_s32(cols_0145_0_3.val[0], cols_2367_0_3.val[0]);    
+    int32x4x2_t rows_15 = vzipq_s32(cols_0145_4_7.val[0], cols_2367_4_7.val[0]);   
+    int32x4x2_t rows_26 = vzipq_s32(cols_0145_0_3.val[1], cols_2367_0_3.val[1]);
+    int32x4x2_t rows_37 = vzipq_s32(cols_0145_4_7.val[1], cols_2367_4_7.val[1]); 
     // Extract horizontal DCT products for vertical DCT
     int16x8_t row0 = vreinterpretq_s16_s32(rows_04.val[0]);                     
     int16x8_t row1 = vreinterpretq_s16_s32(rows_15.val[0]);
@@ -204,63 +212,76 @@ int main()
     int16x8_t row7 = vreinterpretq_s16_s32(rows_37.val[1]);
     /* BEGIN CALCULATE EVEN DCT */  
     // Stage 1
-    int16x8_t row0s1 = vaddq_s16(row0, row7); 
-    int16x8_t row7s1 = vsubq_s16(row0, row7);
-    int16x8_t row1s1 = vaddq_s16(row1, row6);
-    int16x8_t row6s1 = vsubq_s16(row1, row6);
-    int16x8_t row2s1 = vaddq_s16(row2, row5);
-    int16x8_t row5s1 = vsubq_s16(row2, row5);
-    int16x8_t row3s1 = vaddq_s16(row3, row4);
-    int16x8_t row4s1 = vsubq_s16(row3, row4);  
+    int16x8_t row0s1 = vqaddq_s16(row0, row7); 
+    int16x8_t row7s1 = vqsubq_s16(row0, row7);
+    int16x8_t row1s1 = vqaddq_s16(row1, row6);
+    int16x8_t row6s1 = vqsubq_s16(row1, row6);
+    int16x8_t row2s1 = vqaddq_s16(row2, row5);
+    int16x8_t row5s1 = vqsubq_s16(row2, row5);
+    int16x8_t row3s1 = vqaddq_s16(row3, row4);
+    int16x8_t row4s1 = vqsubq_s16(row3, row4);  
     // Stage 2 
-    int16x8_t row0s2 = vaddq_s16(row0s1, row3s1); 
-    int16x8_t row1s2 = vaddq_s16(row1s1, row2s1); 
-    int16x8_t row2s2 = vsubq_s16(row1s1, row2s1); 
-    int16x8_t row3s2 = vsubq_s16(row0s1, row3s1);  
+    int16x8_t row0s2 = vqaddq_s16(row0s1, row3s1); 
+    int16x8_t row1s2 = vqaddq_s16(row1s1, row2s1); 
+    int16x8_t row2s2 = vqsubq_s16(row1s1, row2s1); 
+    int16x8_t row3s2 = vqsubq_s16(row0s1, row3s1);  
     // Stage 3 
-    int16x8_t row0s3 = vaddq_s16(row0s2, row1s2); 
-    int16x8_t row1s3 = vsubq_s16(row0s2, row1s2);
-    // Begin Rotator 6     
-    r6_inputs_sum = vaddq_s16(row2s2, row3s2);
+    int16x8_t row0s3 = vqaddq_s16(row0s2, row1s2); 
+    int16x8_t row1s3 = vqsubq_s16(row0s2, row1s2);
+    // Begin Rotator 6    
+    // Load constants 
+    cos6_const = vdupq_n_s16(COS6_CONSTV);           
+    r6o1consts = vdupq_n_s16(R6O1CONSTV);
+    r6o2consts = vdupq_n_s16(R6O2CONSTV); 
+    r6_inputs_sum = vqaddq_s16(row2s2, row3s2);
     r6o1temp1 = vmulq_s16(r6o1consts, row3s2);      
     r6o2temp1 = vmulq_s16(r6o2consts, row2s2);         
     c_temp6 = vmulq_s16(cos6_const, r6_inputs_sum); 
-    r6o1temp2 = vaddq_s16(r6o1temp1, c_temp6);      
-    r6o2temp2 = vaddq_s16(r6o2temp1, c_temp6);      
-    int16x8_t row2s3 = vrshrq_n_s16(r6o1temp2, 5);   
-    int16x8_t row3s3 = vrshrq_n_s16(r6o2temp2, 5);  
+    r6o1temp2 = vqaddq_s16(r6o1temp1, c_temp6);      
+    r6o2temp2 = vqaddq_s16(r6o2temp1, c_temp6);      
+    int16x8_t row2s3 = vrshrq_n_s16(r6o1temp2, 4);   
+    int16x8_t row3s3 = vrshrq_n_s16(r6o2temp2, 4);  
     // End Rotator 6
     /* END CALCULATE EVEN DCT */ 
 
     /* BEGIN CALCULATE ODD DCT */  
-    // Stage 2
-    r3_inputs_sum = vaddq_s16(row4s1, row7s1); 
-    c_temp3 = vmulq_s16(cos3_const, r3_inputs_sum); 
+    // Stage 2 
+    // Begin Rotator 3 
+    // Load constants 
+    cos3_const = vdupq_n_s16(COS3_CONSTV);   
+    r3o1consts = vdupq_n_s16(R3O1CONSTV);
+    r3o2consts = vdupq_n_s16(R3O2CONSTV); 
+    r3_inputs_sum = vqaddq_s16(row4s1, row7s1);  
     r3o1temp1 = vmulq_s16(r3o1consts, row7s1);
-    r3o2temp1 = vmulq_s16(r3o2consts, row4s1); 
-    r3o1temp2 = vaddq_s16(r3o1temp1, c_temp3); 
-    r3o2temp2 = vaddq_s16(r3o2temp1, c_temp3); 
-    int16x8_t row4s2 = vrshrq_n_s16(r3o1temp2, 5);     // Scale back down 
-    int16x8_t row7s2 = vrshrq_n_s16(r3o2temp2, 5); 
+    r3o2temp1 = vmulq_s16(r3o2consts, row4s1);  
+    c_temp3 = vmulq_s16(cos3_const, r3_inputs_sum);
+    r3o1temp2 = vqaddq_s16(r3o1temp1, c_temp3); 
+    r3o2temp2 = vqaddq_s16(r3o2temp1, c_temp3); 
+    int16x8_t row4s2 = vrshrq_n_s16(r3o1temp2, 4); 
+    int16x8_t row7s2 = vrshrq_n_s16(r3o2temp2, 4); 
     // End Rotator 3  
-    // Begin Rotator 1      
-    r1_inputs_sum = vaddq_s16(row5s1, row6s1); 
-    c_temp1 = vmulq_s16(cos1_const, r1_inputs_sum); 
+    // Begin Rotator 1     
+    // Load constants 
+    cos1_const = vdupq_n_s16(COS1_CONSTV);   // Load with scalars  
+    r1o1consts = vdupq_n_s16(R1O1CONSTV);
+    r1o2consts = vdupq_n_s16(R1O2CONSTV);
+    r1_inputs_sum = vqaddq_s16(row5s1, row6s1);  
     r1o1temp1 = vmulq_s16(r1o1consts, row6s1);
     r1o2temp1 = vmulq_s16(r1o2consts, row5s1); 
-    r1o1temp2 = vaddq_s16(r1o1temp1, c_temp1); 
-    r1o2temp2 = vaddq_s16(r1o2temp1, c_temp1); 
-    int16x8_t row5s2 = vrshrq_n_s16(r1o1temp2, 5);     // Scale back down 
-    int16x8_t row6s2 = vrshrq_n_s16(r1o2temp2, 5); 
+    c_temp1 = vmulq_s16(cos1_const, r1_inputs_sum);
+    r1o1temp2 = vqaddq_s16(r1o1temp1, c_temp1); 
+    r1o2temp2 = vqaddq_s16(r1o2temp1, c_temp1); 
+    int16x8_t row5s2 = vrshrq_n_s16(r1o1temp2, 4);   
+    int16x8_t row6s2 = vrshrq_n_s16(r1o2temp2, 4); 
     // End Rotator 1  
     // Stage 3 
-    int16x8_t row4s3 = vaddq_s16(row4s2, row6s2);
-    int16x8_t row6s3 = vsubq_s16(row4s2, row6s2);
-    int16x8_t row7s3 = vaddq_s16(row7s2, row5s2);
-    int16x8_t row5s3 = vsubq_s16(row7s2, row5s2); 
+    int16x8_t row4s3 = vqaddq_s16(row4s2, row6s2);
+    int16x8_t row6s3 = vqsubq_s16(row4s2, row6s2);
+    int16x8_t row7s3 = vqaddq_s16(row7s2, row5s2);
+    int16x8_t row5s3 = vqsubq_s16(row7s2, row5s2); 
     // Stage 4 
-    int16x8_t row7s4 = vaddq_s16(row7s3, row4s3);
-    int16x8_t row4s4 = vsubq_s16(row7s3, row4s3);  
+    int16x8_t row7s4 = vqaddq_s16(row7s3, row4s3);
+    int16x8_t row4s4 = vqsubq_s16(row7s3, row4s3);  
     int16x8_t row5s4 = vmulq_s16(row5s3, root2); 
     int16x8_t row6s4 = vmulq_s16(row6s3, root2);
     row5s4 = vrshrq_n_s16(row5s4, 5); 
@@ -282,12 +303,33 @@ int main()
     printf("%d\n", end - start);
 
     printf("Final DCT Output:\n"); 
-    debug(vshrq_n_s16(row0s3, 3));
-    debug(vshrq_n_s16(row1s3, 3));
+    debug(vshrq_n_s16(row0s3, 3)); 
+    debug(vshrq_n_s16(row7s4, 3)); 
     debug(vshrq_n_s16(row2s3, 3));
+    debug(vshrq_n_s16(row5s4, 3));
+    debug(vshrq_n_s16(row1s3, 3));      
+    debug(vshrq_n_s16(row6s4, 3));
     debug(vshrq_n_s16(row3s3, 3)); 
     debug(vshrq_n_s16(row4s4, 3));
-    debug(vshrq_n_s16(row5s4, 3));
-    debug(vshrq_n_s16(row6s4, 3));
-    debug(vshrq_n_s16(row7s4, 3));
+    
+    
+}
+
+int main() 
+{ 
+
+    int16_t input[64]; 
+    FILE *inputfile; 
+    
+    inputfile = fopen("inputdata.txt", "r"); 
+    for (int i = 0; i < 64; i++) { 
+
+        fscanf(inputfile, "%hd,", &input[i]);
+
+    } 
+
+    dct(input);
+    
+    return 0;
+
 }
