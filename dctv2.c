@@ -222,17 +222,14 @@ void dct(int16_t *input)
     int16x8_t row1s3 = vqsubq_s16(row0s2, row1s2);
     // Begin Rotator 6    
     // Load constants 
-    cos6_const = vdupq_n_s16(COS6_CONSTV);           
-    r6o1consts = vdupq_n_s16(R6O1CONSTV);
-    r6o2consts = vdupq_n_s16(R6O2CONSTV); 
     r6_inputs_sum = vqaddq_s16(row2s2, row3s2);
     r6o1temp1 = vmulq_s16(r6o1consts, row3s2);      
     r6o2temp1 = vmulq_s16(r6o2consts, row2s2);         
     c_temp6 = vmulq_s16(cos6_const, r6_inputs_sum); 
     r6o1temp2 = vqaddq_s16(r6o1temp1, c_temp6);      
     r6o2temp2 = vqaddq_s16(r6o2temp1, c_temp6);      
-    int16x8_t row2s3 = vrshrq_n_s16(r6o1temp2, 4);   
-    int16x8_t row3s3 = vrshrq_n_s16(r6o2temp2, 4);  
+    int16x8_t row2s3 = vrshrq_n_s16(r6o1temp2, 5);   
+    int16x8_t row3s3 = vrshrq_n_s16(r6o2temp2, 5);  
     // End Rotator 6
     /* END CALCULATE EVEN DCT */ 
 
@@ -240,31 +237,25 @@ void dct(int16_t *input)
     // Stage 2 
     // Begin Rotator 3 
     // Load constants 
-    cos3_const = vdupq_n_s16(COS3_CONSTV);   
-    r3o1consts = vdupq_n_s16(R3O1CONSTV);
-    r3o2consts = vdupq_n_s16(R3O2CONSTV); 
     r3_inputs_sum = vqaddq_s16(row4s1, row7s1);  
     r3o1temp1 = vmulq_s16(r3o1consts, row7s1);
     r3o2temp1 = vmulq_s16(r3o2consts, row4s1);  
     c_temp3 = vmulq_s16(cos3_const, r3_inputs_sum);
     r3o1temp2 = vqaddq_s16(r3o1temp1, c_temp3); 
     r3o2temp2 = vqaddq_s16(r3o2temp1, c_temp3); 
-    int16x8_t row4s2 = vrshrq_n_s16(r3o1temp2, 4); 
-    int16x8_t row7s2 = vrshrq_n_s16(r3o2temp2, 4); 
+    int16x8_t row4s2 = vrshrq_n_s16(r3o1temp2, 5); 
+    int16x8_t row7s2 = vrshrq_n_s16(r3o2temp2, 5); 
     // End Rotator 3  
     // Begin Rotator 1     
     // Load constants 
-    cos1_const = vdupq_n_s16(COS1_CONSTV);   // Load with scalars  
-    r1o1consts = vdupq_n_s16(R1O1CONSTV);
-    r1o2consts = vdupq_n_s16(R1O2CONSTV);
     r1_inputs_sum = vqaddq_s16(row5s1, row6s1);  
     r1o1temp1 = vmulq_s16(r1o1consts, row6s1);
     r1o2temp1 = vmulq_s16(r1o2consts, row5s1); 
     c_temp1 = vmulq_s16(cos1_const, r1_inputs_sum);
     r1o1temp2 = vqaddq_s16(r1o1temp1, c_temp1); 
     r1o2temp2 = vqaddq_s16(r1o2temp1, c_temp1); 
-    int16x8_t row5s2 = vrshrq_n_s16(r1o1temp2, 4);   
-    int16x8_t row6s2 = vrshrq_n_s16(r1o2temp2, 4); 
+    int16x8_t row5s2 = vrshrq_n_s16(r1o1temp2, 5);   
+    int16x8_t row6s2 = vrshrq_n_s16(r1o2temp2, 5); 
     // End Rotator 1  
     // Stage 3 
     int16x8_t row4s3 = vqaddq_s16(row4s2, row6s2);
