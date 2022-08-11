@@ -61,17 +61,6 @@ void dct(int16_t *input)
     int start, end;
     start =  (int)clock();
 
-    // Assume 8-bit input to DCT (pixel value) 
-    // int16_t input[] = {1, 2, 3, 4, 5, 6, 7, 8,
-    //                     8, 7, 6, 5, 4, 3, 2, 1,
-    //                     1, 2, 3, 4, 5, 6, 7, 8,
-    //                     1, 7, 6, 5, 4, 3, 2, 1,
-    //                     1, 7, 6, 5, 4, 3, 2, 1,
-    //                     1, 7, 6, 5, 4, 3, 2, 1,
-    //                     1, 2, 3, 4, 5, 6, 7, 8,
-    //                     8, 7, 6, 5, 4, 3, 2, 1,
-    //                 };
-
     /* LOAD 8x8 BLOCK OF DATA */
     int16x8x4_t rows1to3, rows4to7; 
     // vld4q() as it is the largest load possible
@@ -119,13 +108,13 @@ void dct(int16_t *input)
     int16x8_t r6o1consts = vdupq_n_s16(R6O1CONST);
     int16x8_t r6o2consts = vdupq_n_s16(R6O2CONST);   
     // Order intermediate term computations for pipelining
-    int16x8_t r6_inputs_sum = vaddq_s16(col2s2, col3s2);  
+    int16x8_t r6_inputs_sum = vqaddq_s16(col2s2, col3s2);  
     int16x8_t r6o1temp1 = vmulq_s16(r6o1consts, col3s2);    
     int16x8_t r6o2temp1 = vmulq_s16(r6o2consts, col2s2);  
     int16x8_t c_temp6 = vmulq_s16(cos6_const, r6_inputs_sum);     
     // Add intermediate products and perform downscaling with rounding
-    int16x8_t r6o1temp2 = vaddq_s16(r6o1temp1, c_temp6); 
-    int16x8_t r6o2temp2 = vaddq_s16(r6o2temp1, c_temp6);  
+    int16x8_t r6o1temp2 = vqaddq_s16(r6o1temp1, c_temp6); 
+    int16x8_t r6o2temp2 = vqaddq_s16(r6o2temp1, c_temp6);  
     int16x8_t col2s3 = vrshrq_n_s16(r6o1temp2, 5);      
     int16x8_t col3s3 = vrshrq_n_s16(r6o2temp2, 5);  
     __asm("@ End R6"); 
@@ -183,6 +172,9 @@ void dct(int16_t *input)
     col6s4 = vrshrq_n_s16(col6s4, 5);
     __asm("@ End Sqrt(2) Scaling");
     /* END CALCULATE ODD DCT */  
+
+    // DEBUG 
+    // return 0;
 
     /* VERTICAL DCT */ 
     // Reshape data for DCT  
@@ -289,28 +281,28 @@ void dct(int16_t *input)
     /* END CALCULATE ODD DCT*/ 
 
     /* STORE FINAL DOWNSCALED ROUNDED RESULT TO MEMORY */
-    vst1q_s16(input + (0 * 8), vshrq_n_s16(row0s3, 3));  
-    vst1q_s16(input + (1 * 8), vshrq_n_s16(row1s3, 3)); 
-    vst1q_s16(input + (2 * 8), vshrq_n_s16(row2s3, 3));
-    vst1q_s16(input + (3 * 8), vshrq_n_s16(row3s3, 3));
-    vst1q_s16(input + (4 * 8), vshrq_n_s16(row4s4, 3));
-    vst1q_s16(input + (5 * 8), vshrq_n_s16(row5s4, 3));
-    vst1q_s16(input + (6 * 8), vshrq_n_s16(row6s4, 3));
-    vst1q_s16(input + (7 * 8), vshrq_n_s16(row7s4, 3));
+    vst1q_s16(input + (0 * 8), vrshrq_n_s16(row0s3, 3));  
+    vst1q_s16(input + (1 * 8), vrshrq_n_s16(row1s3, 3)); 
+    vst1q_s16(input + (2 * 8), vrshrq_n_s16(row2s3, 3));
+    vst1q_s16(input + (3 * 8), vrshrq_n_s16(row3s3, 3));
+    vst1q_s16(input + (4 * 8), vrshrq_n_s16(row4s4, 3));
+    vst1q_s16(input + (5 * 8), vrshrq_n_s16(row5s4, 3));
+    vst1q_s16(input + (6 * 8), vrshrq_n_s16(row6s4, 3));
+    vst1q_s16(input + (7 * 8), vrshrq_n_s16(row7s4, 3));
 
     // TIMING 
     end =  (int)clock();
     printf("%d\n", end - start);
 
     printf("Final DCT Output:\n"); 
-    debug(vshrq_n_s16(row0s3, 3)); 
-    debug(vshrq_n_s16(row7s4, 3)); 
-    debug(vshrq_n_s16(row2s3, 3));
-    debug(vshrq_n_s16(row5s4, 3));
-    debug(vshrq_n_s16(row1s3, 3));      
-    debug(vshrq_n_s16(row6s4, 3));
-    debug(vshrq_n_s16(row3s3, 3)); 
-    debug(vshrq_n_s16(row4s4, 3));
+    debug(vrshrq_n_s16(row0s3, 3)); 
+    debug(vrshrq_n_s16(row7s4, 3)); 
+    debug(vrshrq_n_s16(row2s3, 3));
+    debug(vrshrq_n_s16(row5s4, 3));
+    debug(vrshrq_n_s16(row1s3, 3));      
+    debug(vrshrq_n_s16(row6s4, 3));
+    debug(vrshrq_n_s16(row3s3, 3)); 
+    debug(vrshrq_n_s16(row4s4, 3));
     
     
 }
